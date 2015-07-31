@@ -1,0 +1,22 @@
+# Ignore several file/path patterns such as IDE specific files
+
+/cgi-bin
+/vendor
+xcache/
+picture_library/
+plesk-stat/
+xcacheadmin/
+.ssh/
+.idea/
+nbproject/private/
+nbproject/
+**/*.log
+**/*temp_*
+**/*Copy of*
+/.project
+/.buildpath
+/.settings
+/.bash_history
+/.viminfo
+._*
+/atlassian-ide-plugin.xml

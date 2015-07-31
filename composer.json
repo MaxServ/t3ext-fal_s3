@@ -1,0 +1,13 @@
+{
+    "name": "maxserv/fal_s3",
+    "type": "typo3-cms-extension",
+    "autoload": {
+        "psr-4": {
+            "MaxServ\\FalS3\\": "Classes/"
+        }
+    },
+    "require": {
+        "typo3/cms-core": ">=6.2.12, <7.4",
+        "aws/aws-sdk-php": "^3.2.3"
+    }
+}
