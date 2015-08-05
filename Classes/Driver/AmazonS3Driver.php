@@ -119,6 +119,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 			$this->configuration['stream_protocol'] = strtolower(self::DRIVER_KEY . '.' . $this->configuration['configurationKey']);
 
 			Aws\S3\StreamWrapper::register($this->s3Client, $this->configuration['stream_protocol']);
+
+			$this->capabilities = TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_BROWSABLE |
+				TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_PUBLIC |
+				TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_WRITABLE;
 		}
 	}
 
@@ -131,7 +135,8 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return int
 	 */
 	public function mergeConfigurationCapabilities($capabilities) {
-		// TODO: Implement mergeConfigurationCapabilities() method.
+		$this->capabilities &= $capabilities;
+		return $this->capabilities;
 	}
 
 	/**
@@ -140,7 +145,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string
 	 */
 	public function getRootLevelFolder() {
-		// TODO: Implement getRootLevelFolder() method.
+		return '/';
 	}
 
 	/**
@@ -149,7 +154,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string
 	 */
 	public function getDefaultFolder() {
-		// TODO: Implement getDefaultFolder() method.
+		return $this->getRootLevelFolder();
 	}
 
 	/**
