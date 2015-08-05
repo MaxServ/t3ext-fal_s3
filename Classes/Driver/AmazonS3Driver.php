@@ -427,7 +427,17 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return array
 	 */
 	public function getPermissions($identifier) {
-		// TODO: Implement getPermissions() method.
+		$permissions = array(
+			'r' => FALSE,
+			'w' => FALSE
+		);
+
+			// always grant read access for the root directory
+		if ($identifier === '/') {
+			$permissions['r'] = TRUE;
+		}
+
+		return $permissions;
 	}
 
 	/**
