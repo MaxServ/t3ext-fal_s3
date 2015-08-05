@@ -123,11 +123,6 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	}
 
 	/**
-	 * @var string $fileIdentifier
-	 * @return string
-	 */
-
-	/**
 	 * Merges the capabilities merged by the user at the storage
 	 * configuration into the actual capabilities of the driver
 	 * and returns the result.
