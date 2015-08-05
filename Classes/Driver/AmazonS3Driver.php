@@ -42,10 +42,48 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
 	/**
 	 * Processes the configuration for this driver.
+	 *
 	 * @return void
+	 * @throws TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException
 	 */
 	public function processConfiguration() {
-		// TODO: Implement processConfiguration() method.
+			// check if a configurationKey is set in the configuration of this storage
+			// next check if the key references to a storageConfiguration for this driver
+			// if this storageConfiguration contains the mandatory key, secret and region properties
+			// merge the configuration with the local array
+		if (is_array($this->configuration) && array_key_exists('configurationKey', $this->configuration)) {
+			if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF'])
+				&& array_key_exists('fal_s3', $GLOBALS['TYPO3_CONF_VARS']['EXTCONF'])
+				&& is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3'])
+				&& array_key_exists('storageConfigurations', $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3'])
+				&& is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'])
+				&& array_key_exists($this->configuration['configurationKey'], $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'])
+				&& is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']])
+				&& array_key_exists('key', $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']])
+				&& !empty($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]['key'])
+				&& array_key_exists('region', $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']])
+				&& !empty($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]['region'])
+				&& array_key_exists('secret', $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']])
+				&& !empty($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]['secret'])
+			) {
+				TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule(
+					$this->configuration,
+					$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]
+				);
+			} else {
+					// throw an InvalidConfigurationException to trigger the storage to mark itself as offline
+				throw new TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException(
+					'Missing configuration for "' . $this->configuration['configurationKey'] . '"',
+					1438785908
+				);
+			}
+		} else {
+				// throw an InvalidConfigurationException to trigger the storage to mark itself as offline
+			throw new TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException(
+				'Unable to resolve a configurationKey for this driver instance',
+				1438785477
+			);
+		}
 	}
 
 	/**
