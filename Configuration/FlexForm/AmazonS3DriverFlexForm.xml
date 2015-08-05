@@ -6,7 +6,7 @@
 	<ROOT>
 		<type>array</type>
 		<el>
-			<region>
+			<configurationKey>
 				<TCEforms>
 					<label>Storage configuration</label>
 					<config>
@@ -18,7 +18,7 @@
 						<maxitems>1</maxitems>
 					</config>
 				</TCEforms>
-			</region>
+			</configurationKey>
 		</el>
 	</ROOT>
 </T3DataStructure>
