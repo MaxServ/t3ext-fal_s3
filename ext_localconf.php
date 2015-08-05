@@ -17,9 +17,8 @@ $driverRegistry->registerDriverClass(
 
 $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations']['offlineStorage'] = array(
 	'bucket' => '',
-	'readOnlyBucket' => '',
+	'region' => '',
 	'key' => '',
 	'secret' => '',
-	'publicBaseUrl' => '',
 	'title' => 'Dummy S3 configuration (offline)'
 );
