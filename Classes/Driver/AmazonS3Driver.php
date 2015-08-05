@@ -41,6 +41,11 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	const DRIVER_KEY = 'MaxServ.FalS3';
 
 	/**
+	 * @var Aws\S3\S3Client
+	 */
+	protected $s3Client;
+
+	/**
 	 * Processes the configuration for this driver.
 	 *
 	 * @return void
@@ -93,8 +98,34 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return void
 	 */
 	public function initialize() {
-		// TODO: Implement initialize() method.
+		if (is_array($this->configuration) && array_key_exists('region', $this->configuration)
+			&& array_key_exists('key', $this->configuration) && array_key_exists('secret', $this->configuration)
+			) {
+			$this->s3Client = new Aws\S3\S3Client(array(
+				'version' => 'latest',
+				'region' => $this->configuration['region'],
+				'credentials' => array(
+					'key' => $this->configuration['key'],
+					'secret' => $this->configuration['secret']
+				)
+			));
+
+				// strip the s3 protocol prefix from the bucket name
+			if (strpos($this->configuration['bucket'], 's3://') === 0) {
+				$this->configuration['bucket'] = substr($this->configuration['bucket'], 5);
+			}
+
+				// to prevent collisions between multiple S3 drivers using a stream_wrapper use a unique protocol key
+			$this->configuration['stream_protocol'] = strtolower(self::DRIVER_KEY . '.' . $this->configuration['configurationKey']);
+
+			Aws\S3\StreamWrapper::register($this->s3Client, $this->configuration['stream_protocol']);
+		}
 	}
+
+	/**
+	 * @var string $fileIdentifier
+	 * @return string
+	 */
 
 	/**
 	 * Merges the capabilities merged by the user at the storage
@@ -512,5 +543,32 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 */
 	public function countFoldersInFolder($folderIdentifier, $recursive = FALSE, array $folderNameFilterCallbacks = array()) {
 		// TODO: Implement countFoldersInFolder() method.
+	}
+
+	/**
+	 * Returns the StreamWrapper path of a file or folder.
+	 *
+	 * @param \TYPO3\CMS\Core\Resource\FileInterface|\TYPO3\CMS\Core\Resource\Folder|string $file
+	 * @return string
+	 * @throws \RuntimeException
+	 */
+	protected function getStreamWrapperPath($file) {
+		$basePath = $this->configuration['stream_protocol'] . '://' . $this->configuration['bucket'] . '/';
+
+		if ($file instanceof TYPO3\CMS\Core\Resource\FileInterface) {
+			$identifier = $file->getIdentifier();
+		} elseif ($file instanceof TYPO3\CMS\Core\Resource\Folder) {
+			$identifier = $file->getIdentifier();
+		} elseif (is_string($file)) {
+			$identifier = $file;
+		} else {
+			throw new \RuntimeException('Type "' . gettype($file) . '" is not supported.', 1325191178);
+		}
+
+		if ($identifier !== '/') {
+			$identifier = ltrim($identifier, '/');
+		}
+
+		return $basePath . $identifier;
 	}
 }
