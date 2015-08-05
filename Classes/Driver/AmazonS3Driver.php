@@ -478,7 +478,30 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return array
 	 */
 	public function getFileInfoByIdentifier($fileIdentifier, array $propertiesToExtract = array()) {
-		// TODO: Implement getFileInfoByIdentifier() method.
+		$this->normalizeIdentifier($fileIdentifier);
+
+		$metadata = $this->s3Client->headObject(array(
+			'Bucket' => $this->configuration['bucket'],
+			'Key' => $fileIdentifier
+		))->toArray();
+
+		$lastModifiedUnixTimestamp = 0;
+
+		if ($metadata['LastModified'] instanceof Aws\Api\DateTimeResult) {
+			$lastModifiedUnixTimestamp = $metadata['LastModified']->getTimestamp();
+		}
+
+		return array(
+			'name' => basename($fileIdentifier),
+			'identifier' => $fileIdentifier,
+			'ctime' => $lastModifiedUnixTimestamp,
+			'mtime' => $lastModifiedUnixTimestamp,
+			'mimetype' => $metadata['ContentType'],
+			'size' => (int) $metadata['ContentLength'],
+			'identifier_hash' => $this->hashIdentifier($fileIdentifier),
+			'folder_hash' => $this->hashIdentifier(TYPO3\CMS\Core\Utility\PathUtility::dirname($fileIdentifier)),
+			'storage' => $this->storageUid
+		);
 	}
 
 	/**
@@ -508,7 +531,22 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return array of FileIdentifiers
 	 */
 	public function getFilesInFolder($folderIdentifier, $start = 0, $numberOfItems = 0, $recursive = FALSE, array $filenameFilterCallbacks = array(), $sort = '', $sortRev = FALSE) {
-		// TODO: Implement getFilesInFolder() method.
+		$fileIdentifiers = array();
+		$this->normalizeIdentifier($folderIdentifier);
+
+		if ($folderIdentifier === '/') {
+			$folderIdentifier = '';
+		}
+
+		$directoryContents = new \DirectoryIterator($this->getStreamWrapperPath($folderIdentifier));
+
+		foreach ($directoryContents as $file) {
+			if (!$file->isDot() && is_file($this->getStreamWrapperPath($file->getFilename()))) {
+				$fileIdentifiers[] = $file->getFilename();
+			}
+		}
+
+		return $fileIdentifiers;
 	}
 
 	/**
@@ -575,10 +613,18 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 			throw new \RuntimeException('Type "' . gettype($file) . '" is not supported.', 1325191178);
 		}
 
+		$this->normalizeIdentifier($identifier);
+
+		return $basePath . $identifier;
+	}
+
+
+	/**
+	 * @param string &$identifier
+	 */
+	protected function normalizeIdentifier(&$identifier) {
 		if ($identifier !== '/') {
 			$identifier = ltrim($identifier, '/');
 		}
-
-		return $basePath . $identifier;
 	}
 }
