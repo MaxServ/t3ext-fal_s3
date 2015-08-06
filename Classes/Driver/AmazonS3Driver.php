@@ -47,6 +47,11 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	protected $s3Client;
 
 	/**
+	 * @var \TYPO3\CMS\Core\Resource\ResourceStorage
+	 */
+	protected $storage;
+
+	/**
 	 * Processes the configuration for this driver.
 	 *
 	 * @return void
@@ -582,7 +587,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 		$directoryContents = new \DirectoryIterator($this->getStreamWrapperPath($folderIdentifier));
 
 		foreach ($directoryContents as $dir) {
-			if (!$dir->isDot() && is_dir($this->getStreamWrapperPath($folderIdentifier . $dir->getFilename()))) {
+			if (!$dir->isDot() && $dir->getFilename() !== $this->getProcessingFolder() && is_dir($this->getStreamWrapperPath($folderIdentifier . $dir->getFilename()))) {
 				$folderIdentifiers[] = $folderIdentifier . $dir->getFilename();
 			}
 		}
@@ -639,7 +644,6 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 		return $basePath . $identifier;
 	}
 
-
 	/**
 	 * @param string &$identifier
 	 */
@@ -647,5 +651,25 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 		if ($identifier !== '/') {
 			$identifier = ltrim($identifier, '/');
 		}
+	}
+
+	/**
+	 * @return \TYPO3\CMS\Core\Resource\ResourceStorage
+	 */
+	protected function getStorage(){
+		if(!$this->storage){
+			/** @var $storageRepository \TYPO3\CMS\Core\Resource\StorageRepository */
+			$storageRepository = TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Core\Resource\StorageRepository');
+			$this->storage = $storageRepository->findByUid($this->storageUid);
+		}
+
+		return $this->storage;
+	}
+
+	/**
+	 * @return string
+	 */
+	protected function getProcessingFolder(){
+		return $this->getStorage()->getProcessingFolder()->getName();
 	}
 }
