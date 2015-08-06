@@ -171,7 +171,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string
 	 */
 	public function getPublicUrl($identifier) {
-		$this->normalizeIdentifier($identifier);
+		$identifier = $this->canonicalizeAndCheckFolderIdentifier($identifier);
 
 		$publicUrl = '';
 
@@ -181,7 +181,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
 			$publicUrl = 'https://' .
 				$this->configuration['bucket'] .
-				'.s3.amazonaws.com/' .
+				'.s3.amazonaws.com' .
 				implode('/', $uriParts);
 		}
 
@@ -230,7 +230,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return bool
 	 */
 	public function fileExists($fileIdentifier) {
-		$this->normalizeIdentifier($fileIdentifier);
+		$fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
 
 		$path = $this->getStreamWrapperPath($fileIdentifier);
 
@@ -245,7 +245,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return bool
 	 */
 	public function folderExists($folderIdentifier) {
-		$this->normalizeIdentifier($folderIdentifier);
+		$folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
 
 		$path = $this->getStreamWrapperPath($folderIdentifier);
 
@@ -347,7 +347,6 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string
 	 */
 	public function hash($fileIdentifier, $hashAlgorithm) {
-		$this->normalizeIdentifier($fileIdentifier);
 		$fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
 
 		return sha1($fileIdentifier);
@@ -437,8 +436,8 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return bool
 	 */
 	public function folderExistsInFolder($folderName, $folderIdentifier) {
-		$this->normalizeIdentifier($folderIdentifier);
-		$this->normalizeIdentifier($folderName);
+		$folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
+		$folderName = $this->canonicalizeAndCheckFolderIdentifier($folderName);
 
 		return $this->folderExists($folderIdentifier . $folderName);
 	}
@@ -466,13 +465,9 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return array
 	 */
 	public function getPermissions($identifier) {
-		$this->normalizeIdentifier($identifier);
+		$identifier = $this->canonicalizeAndCheckFolderIdentifier($identifier);
 
-		if ($identifier === '/') {
-			$identifier = '';
-		}
-
-		$path = $this->getStreamWrapperPath($identifier);
+		$path = $this->getStreamWrapperPath(rtrim($identifier, '/'));
 
 		$permissions = array(
 			'r' => is_readable($path),
@@ -508,7 +503,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return bool TRUE if $content is within or matches $folderIdentifier
 	 */
 	public function isWithin($folderIdentifier, $identifier) {
-		// TODO: Implement isWithin() method.
+		$folderIdentifier = $this->canonicalizeAndCheckFileIdentifier($folderIdentifier);
+		$identifier = $this->canonicalizeAndCheckFileIdentifier($identifier);
+		return $folderIdentifier === $identifier
+			|| ($folderIdentifier !== $identifier && $folderIdentifier !== '' && strpos($identifier, $folderIdentifier) === 0);
 	}
 
 	/**
@@ -520,7 +518,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return array
 	 */
 	public function getFileInfoByIdentifier($fileIdentifier, array $propertiesToExtract = array()) {
-		$this->normalizeIdentifier($fileIdentifier);
+		$fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
 
 		$path = $this->getStreamWrapperPath($fileIdentifier);
 
@@ -544,11 +542,11 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return array
 	 */
 	public function getFolderInfoByIdentifier($folderIdentifier) {
-		$this->normalizeIdentifier($folderIdentifier);
+		$folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
 
 		return array(
 			'identifier' => $folderIdentifier,
-			'name' => basename(rtrim($folderIdentifier, '/')),
+			'name' => basename($folderIdentifier),
 			'storage' => $this->storageUid
 		);
 	}
@@ -571,17 +569,17 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 */
 	public function getFilesInFolder($folderIdentifier, $start = 0, $numberOfItems = 0, $recursive = FALSE, array $filenameFilterCallbacks = array(), $sort = '', $sortRev = FALSE) {
 		$fileIdentifiers = array();
-		$this->normalizeIdentifier($folderIdentifier);
-
-		if ($folderIdentifier === '/') {
-			$folderIdentifier = '';
-		}
+		$folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
+		$folderIdentifier = rtrim($folderIdentifier, '/');
 
 		$directoryContents = new \DirectoryIterator($this->getStreamWrapperPath($folderIdentifier));
 
 		foreach ($directoryContents as $file) {
-			if (!$file->isDot() && is_file($this->getStreamWrapperPath($folderIdentifier . $file->getFilename()))) {
-				$fileIdentifiers[] = $folderIdentifier . $file->getFilename();
+			$newFileIdentifier = $folderIdentifier . $this->canonicalizeAndCheckFileIdentifier($file->getFilename());
+			$path = $this->getStreamWrapperPath($newFileIdentifier);
+
+			if (!$file->isDot() && is_file($path)) {
+				$fileIdentifiers[] = $newFileIdentifier;
 			}
 		}
 
@@ -606,17 +604,17 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 */
 	public function getFoldersInFolder($folderIdentifier, $start = 0, $numberOfItems = 0, $recursive = FALSE, array $folderNameFilterCallbacks = array(), $sort = '', $sortRev = FALSE) {
 		$folderIdentifiers = array();
-		$this->normalizeIdentifier($folderIdentifier);
-
-		if ($folderIdentifier === '/') {
-			$folderIdentifier = '';
-		}
+		$folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
+		$folderIdentifier = rtrim($folderIdentifier, '/');
 
 		$directoryContents = new \DirectoryIterator($this->getStreamWrapperPath($folderIdentifier));
 
 		foreach ($directoryContents as $dir) {
-			if (!$dir->isDot() && $dir->getFilename() !== $this->getProcessingFolder() && is_dir($this->getStreamWrapperPath($folderIdentifier . $dir->getFilename()))) {
-				$folderIdentifiers[] = $folderIdentifier . $dir->getFilename();
+			$newFolderIdentifier = $folderIdentifier . $this->canonicalizeAndCheckFileIdentifier($dir->getFilename());
+			$path = $this->getStreamWrapperPath($newFolderIdentifier);
+
+			if (!$dir->isDot() && $dir->getFilename() !== $this->getProcessingFolder() && is_dir($path)) {
+				$folderIdentifiers[] = $newFolderIdentifier;
 			}
 		}
 
@@ -655,7 +653,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @throws \RuntimeException
 	 */
 	protected function getStreamWrapperPath($file) {
-		$basePath = $this->configuration['stream_protocol'] . '://' . $this->configuration['bucket'] . '/';
+		$basePath = $this->configuration['stream_protocol'] . '://' . $this->configuration['bucket'];
 
 		if ($file instanceof TYPO3\CMS\Core\Resource\FileInterface) {
 			$identifier = $file->getIdentifier();
@@ -667,18 +665,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 			throw new \RuntimeException('Type "' . gettype($file) . '" is not supported.', 1325191178);
 		}
 
-		$this->normalizeIdentifier($identifier);
-
 		return $basePath . $identifier;
-	}
-
-	/**
-	 * @param string &$identifier
-	 */
-	protected function normalizeIdentifier(&$identifier) {
-		if ($identifier !== '/') {
-			$identifier = ltrim($identifier, '/');
-		}
 	}
 
 	/**
