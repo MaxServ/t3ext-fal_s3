@@ -456,19 +456,16 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	public function getPermissions($identifier) {
 		$this->normalizeIdentifier($identifier);
 
-		$permissions = array(
-			'r' => FALSE,
-			'w' => FALSE
-		);
-
-			// always grant read access for the root directory
-		if ($identifier === '/' || $identifier === '') {
-			$permissions['r'] = TRUE;
-		} else {
-			$path = $this->getStreamWrapperPath($identifier);
-
-			$permissions['r'] = is_readable($path);
+		if ($identifier === '/') {
+			$identifier = '';
 		}
+
+		$path = $this->getStreamWrapperPath($identifier);
+
+		$permissions = array(
+			'r' => is_readable($path),
+			'w' => is_writable($path)
+		);
 
 		return $permissions;
 	}
