@@ -198,7 +198,23 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string the Identifier of the new folder
 	 */
 	public function createFolder($newFolderName, $parentFolderIdentifier = '', $recursive = FALSE) {
-		// TODO: Implement createFolder() method.
+		$parentFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($parentFolderIdentifier);
+		$newFolderName = trim($newFolderName, '/');
+
+		if ($recursive === FALSE) {
+			$newFolderName = $this->sanitizeFileName($newFolderName);
+			$identifier = $parentFolderIdentifier . $newFolderName . '/';
+		} else {
+			$parts = TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('/', $newFolderName);
+			$parts = array_map(array($this, 'sanitizeFileName'), $parts);
+			$newFolderName = implode('/', $parts);
+			$identifier = $parentFolderIdentifier . $newFolderName . '/';
+		}
+		$path = $this->getStreamWrapperPath($identifier);
+
+		mkdir($path, $GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask'], $recursive);
+
+		return $identifier;
 	}
 
 	/**
