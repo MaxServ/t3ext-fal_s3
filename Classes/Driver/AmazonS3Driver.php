@@ -233,7 +233,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return bool TRUE if there are no files and folders within $folder
 	 */
 	public function isFolderEmpty($folderIdentifier) {
-		// TODO: Implement isFolderEmpty() method.
+		return $this->countFilesInFolder($folderIdentifier) === 0 && $this->countFoldersInFolder($folderIdentifier) === 0;
 	}
 
 	/**
