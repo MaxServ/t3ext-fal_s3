@@ -221,7 +221,9 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return bool
 	 */
 	public function folderExists($folderIdentifier) {
-		// TODO: Implement folderExists() method.
+		$this->normalizeIdentifier($folderIdentifier);
+
+		return file_exists($this->getStreamWrapperPath($folderIdentifier));
 	}
 
 	/**
@@ -428,14 +430,20 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return array
 	 */
 	public function getPermissions($identifier) {
+		$this->normalizeIdentifier($identifier);
+
 		$permissions = array(
 			'r' => FALSE,
 			'w' => FALSE
 		);
 
 			// always grant read access for the root directory
-		if ($identifier === '/') {
+		if ($identifier === '/' || $identifier === '') {
 			$permissions['r'] = TRUE;
+		} else {
+			$path = $this->getStreamWrapperPath($identifier);
+
+			$permissions['r'] = is_readable($path);
 		}
 
 		return $permissions;
@@ -503,7 +511,13 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return array
 	 */
 	public function getFolderInfoByIdentifier($folderIdentifier) {
-		// TODO: Implement getFolderInfoByIdentifier() method.
+		$this->normalizeIdentifier($folderIdentifier);
+
+		return array(
+			'identifier' => $folderIdentifier,
+			'name' => basename(rtrim($folderIdentifier, '/')),
+			'storage' => $this->storageUid
+		);
 	}
 
 	/**
@@ -533,8 +547,8 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 		$directoryContents = new \DirectoryIterator($this->getStreamWrapperPath($folderIdentifier));
 
 		foreach ($directoryContents as $file) {
-			if (!$file->isDot() && is_file($this->getStreamWrapperPath($file->getFilename()))) {
-				$fileIdentifiers[] = $file->getFilename();
+			if (!$file->isDot() && is_file($this->getStreamWrapperPath($folderIdentifier . $file->getFilename()))) {
+				$fileIdentifiers[] = $folderIdentifier . $file->getFilename();
 			}
 		}
 
@@ -558,7 +572,22 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return array of Folder Identifier
 	 */
 	public function getFoldersInFolder($folderIdentifier, $start = 0, $numberOfItems = 0, $recursive = FALSE, array $folderNameFilterCallbacks = array(), $sort = '', $sortRev = FALSE) {
-		// TODO: Implement getFoldersInFolder() method.
+		$folderIdentifiers = array();
+		$this->normalizeIdentifier($folderIdentifier);
+
+		if ($folderIdentifier === '/') {
+			$folderIdentifier = '';
+		}
+
+		$directoryContents = new \DirectoryIterator($this->getStreamWrapperPath($folderIdentifier));
+
+		foreach ($directoryContents as $dir) {
+			if (!$dir->isDot() && is_dir($this->getStreamWrapperPath($folderIdentifier . $dir->getFilename()))) {
+				$folderIdentifiers[] = $folderIdentifier . $dir->getFilename();
+			}
+		}
+
+		return $folderIdentifiers;
 	}
 
 	/**
@@ -570,7 +599,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return integer Number of files in folder
 	 */
 	public function countFilesInFolder($folderIdentifier, $recursive = FALSE, array $filenameFilterCallbacks = array()) {
-		// TODO: Implement countFilesInFolder() method.
+		return count($this->getFilesInFolder($folderIdentifier, 0, 0, $recursive, $filenameFilterCallbacks));
 	}
 
 	/**
@@ -582,7 +611,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return integer Number of folders in folder
 	 */
 	public function countFoldersInFolder($folderIdentifier, $recursive = FALSE, array $folderNameFilterCallbacks = array()) {
-		// TODO: Implement countFoldersInFolder() method.
+		return count($this->getFoldersInFolder($folderIdentifier, 0, 0, $recursive, $folderNameFilterCallbacks));
 	}
 
 	/**
