@@ -171,7 +171,21 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string
 	 */
 	public function getPublicUrl($identifier) {
-		// TODO: Implement getPublicUrl() method.
+		$this->normalizeIdentifier($identifier);
+
+		$publicUrl = '';
+
+		if (is_array($this->configuration) && array_key_exists('bucket', $this->configuration) && !empty($this->configuration['bucket'])) {
+			$uriParts = explode('/', $identifier);
+			$uriParts = array_map('rawurlencode', $uriParts);
+
+			$publicUrl = 'https://' .
+				$this->configuration['bucket'] .
+				'.s3.amazonaws.com/' .
+				implode('/', $uriParts);
+		}
+
+		return $publicUrl;
 	}
 
 	/**
