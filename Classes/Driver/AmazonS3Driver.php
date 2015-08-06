@@ -230,9 +230,12 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return bool
 	 */
 	public function fileExists($fileIdentifier) {
-		$this->normalizeIdentifier($folderIdentifier);
+		$this->normalizeIdentifier($fileIdentifier);
 
-		return file_exists($this->getStreamWrapperPath($folderIdentifier));
+		$path = $this->getStreamWrapperPath($fileIdentifier);
+
+			// if the last character of the path is not a "/" mark the object as file
+		return substr($path, -1) !== '/' && file_exists($path);
 	}
 
 	/**
@@ -244,7 +247,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	public function folderExists($folderIdentifier) {
 		$this->normalizeIdentifier($folderIdentifier);
 
-		return file_exists($this->getStreamWrapperPath($folderIdentifier));
+		$path = $this->getStreamWrapperPath($folderIdentifier);
+
+			// if the last character of the path is a "/" mark the object as directory
+		return substr($path, -1) === '/' && file_exists($path);
 	}
 
 	/**
