@@ -341,7 +341,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string
 	 */
 	public function hash($fileIdentifier, $hashAlgorithm) {
-		// TODO: Implement hash() method.
+		$this->normalizeIdentifier($fileIdentifier);
+		$fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
+
+		return sha1($fileIdentifier);
 	}
 
 	/**
