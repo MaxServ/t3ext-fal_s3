@@ -230,7 +230,9 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return bool
 	 */
 	public function fileExists($fileIdentifier) {
-		// TODO: Implement fileExists() method.
+		$this->normalizeIdentifier($folderIdentifier);
+
+		return file_exists($this->getStreamWrapperPath($folderIdentifier));
 	}
 
 	/**
