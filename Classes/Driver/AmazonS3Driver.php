@@ -417,7 +417,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return bool
 	 */
 	public function fileExistsInFolder($fileName, $folderIdentifier) {
-		// TODO: Implement fileExistsInFolder() method.
+		$this->normalizeIdentifier($folderIdentifier);
+		$this->normalizeIdentifier($fileName);
+
+		return $this->fileExists($folderIdentifier . $fileName);
 	}
 
 	/**
@@ -428,7 +431,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return bool
 	 */
 	public function folderExistsInFolder($folderName, $folderIdentifier) {
-		// TODO: Implement folderExistsInFolder() method.
+		$this->normalizeIdentifier($folderIdentifier);
+		$this->normalizeIdentifier($folderName);
+
+		return $this->folderExists($folderIdentifier . $folderName);
 	}
 
 	/**
