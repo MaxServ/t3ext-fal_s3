@@ -26,6 +26,7 @@ namespace MaxServ\FalS3\Driver;
  ***************************************************************/
 
 use Aws;
+use GuzzleHttp;
 use TYPO3;
 
 /**
@@ -480,24 +481,15 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	public function getFileInfoByIdentifier($fileIdentifier, array $propertiesToExtract = array()) {
 		$this->normalizeIdentifier($fileIdentifier);
 
-		$metadata = $this->s3Client->headObject(array(
-			'Bucket' => $this->configuration['bucket'],
-			'Key' => $fileIdentifier
-		))->toArray();
-
-		$lastModifiedUnixTimestamp = 0;
-
-		if ($metadata['LastModified'] instanceof Aws\Api\DateTimeResult) {
-			$lastModifiedUnixTimestamp = $metadata['LastModified']->getTimestamp();
-		}
+		$path = $this->getStreamWrapperPath($fileIdentifier);
 
 		return array(
 			'name' => basename($fileIdentifier),
 			'identifier' => $fileIdentifier,
-			'ctime' => $lastModifiedUnixTimestamp,
-			'mtime' => $lastModifiedUnixTimestamp,
-			'mimetype' => $metadata['ContentType'],
-			'size' => (int) $metadata['ContentLength'],
+			'ctime' => filectime($path),
+			'mtime' => filemtime($path),
+			'mimetype' => GuzzleHttp\Psr7\mimetype_from_filename($path),
+			'size' => (int) filesize($path),
 			'identifier_hash' => $this->hashIdentifier($fileIdentifier),
 			'folder_hash' => $this->hashIdentifier(TYPO3\CMS\Core\Utility\PathUtility::dirname($fileIdentifier)),
 			'storage' => $this->storageUid
