@@ -171,7 +171,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string
 	 */
 	public function getPublicUrl($identifier) {
-		$identifier = $this->canonicalizeAndCheckFolderIdentifier($identifier);
+		$identifier = $this->canonicalizeAndCheckFileIdentifier($identifier);
 
 		$publicUrl = '';
 
