@@ -250,31 +250,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
 		$newIdentifier = $parentFolderName . $newName . '/';
 
-		$oldPath = $this->getStreamWrapperPath($folderIdentifier);
-		$newPath = $this->getStreamWrapperPath($newIdentifier);
-
-		$renamedEntries = array_flip($this->resolveFolderEntries($folderIdentifier, TRUE));
-
-		foreach ($renamedEntries as $oldEntryIdentifier => $newEntryIdentifier) {
-			$newEntryIdentifier = str_replace(
-				$folderIdentifier,
-				$newIdentifier,
-				$oldEntryIdentifier
-			);
-
-			$oldEntryPath = $this->getStreamWrapperPath($oldEntryIdentifier);
-			$newEntryPath = $this->getStreamWrapperPath($newEntryIdentifier);
-
-			rename($oldEntryPath, $newEntryPath);
-
-			$renamedEntries[$oldEntryIdentifier] = $newEntryIdentifier;
-		}
-
-		rename($oldPath, $newPath);
-
-		$renamedEntries[$folderIdentifier] = $newIdentifier;
-
-		return $renamedEntries;
+		return $this->moveFolderWithinStorage($folderIdentifier, $newIdentifier, '');
 	}
 
 	/**
@@ -466,7 +442,34 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return array All files which are affected, map of old => new file identifiers
 	 */
 	public function moveFolderWithinStorage($sourceFolderIdentifier, $targetFolderIdentifier, $newFolderName) {
-		// TODO: Implement moveFolderWithinStorage() method.
+		$sourceFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($sourceFolderIdentifier);
+		$targetFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($targetFolderIdentifier . $newFolderName);
+
+		$oldPath = $this->getStreamWrapperPath($sourceFolderIdentifier);
+		$newPath = $this->getStreamWrapperPath($targetFolderIdentifier);
+
+		$renamedEntries = array_flip($this->resolveFolderEntries($sourceFolderIdentifier, TRUE));
+
+		foreach ($renamedEntries as $oldEntryIdentifier => $newEntryIdentifier) {
+			$newEntryIdentifier = str_replace(
+				$sourceFolderIdentifier,
+				$targetFolderIdentifier,
+				$oldEntryIdentifier
+			);
+
+			$oldEntryPath = $this->getStreamWrapperPath($oldEntryIdentifier);
+			$newEntryPath = $this->getStreamWrapperPath($newEntryIdentifier);
+
+			rename($oldEntryPath, $newEntryPath);
+
+			$renamedEntries[$oldEntryIdentifier] = $newEntryIdentifier;
+		}
+
+		rename($oldPath, $newPath);
+
+		$renamedEntries[$sourceFolderIdentifier] = $targetFolderIdentifier;
+
+		return $renamedEntries;
 	}
 
 	/**
