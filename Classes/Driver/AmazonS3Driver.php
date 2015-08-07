@@ -234,7 +234,47 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return array A map of old to new file identifiers of all affected resources
 	 */
 	public function renameFolder($folderIdentifier, $newName) {
-		// TODO: Implement renameFolder() method.
+		$folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
+		$newName = $this->sanitizeFileName($newName);
+		$newName = trim($newName, '/');
+
+		$parentFolderName = dirname($folderIdentifier);
+
+		if ($parentFolderName === '.') {
+			$parentFolderName = '';
+		} else {
+			$parentFolderName .= '/';
+		}
+
+		$parentFolderName = $this->canonicalizeAndCheckFolderIdentifier($parentFolderName);
+
+		$newIdentifier = $parentFolderName . $newName . '/';
+
+		$oldPath = $this->getStreamWrapperPath($folderIdentifier);
+		$newPath = $this->getStreamWrapperPath($newIdentifier);
+
+		$renamedEntries = array_flip($this->resolveFolderEntries($folderIdentifier, TRUE));
+
+		foreach ($renamedEntries as $oldEntryIdentifier => $newEntryIdentifier) {
+			$newEntryIdentifier = str_replace(
+				$folderIdentifier,
+				$newIdentifier,
+				$oldEntryIdentifier
+			);
+
+			$oldEntryPath = $this->getStreamWrapperPath($oldEntryIdentifier);
+			$newEntryPath = $this->getStreamWrapperPath($newEntryIdentifier);
+
+			rename($oldEntryPath, $newEntryPath);
+
+			$renamedEntries[$oldEntryIdentifier] = $newEntryIdentifier;
+		}
+
+		rename($oldPath, $newPath);
+
+		$renamedEntries[$folderIdentifier] = $newIdentifier;
+
+		return $renamedEntries;
 	}
 
 	/**
@@ -690,6 +730,65 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 		}
 
 		return $basePath . $identifier;
+	}
+
+	/**
+	 * @param $path
+	 * @return string
+	 */
+	protected function stripStreamWrapperPath($path) {
+		return str_replace(
+			$this->configuration['stream_protocol'] . '://' . $this->configuration['bucket'],
+			'',
+			$path
+		);
+	}
+
+	/**
+	 * @param string $folderIdentifier
+	 * @param bool $recursive
+	 * @param bool $includeFiles
+	 * @param bool $includeDirectories
+	 * @return array
+	 */
+	protected function resolveFolderEntries($folderIdentifier, $recursive = FALSE, $includeFiles = TRUE, $includeDirectories = TRUE) {
+		$directoryEntries = array();
+		$folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
+		$path = $this->getStreamWrapperPath($folderIdentifier);
+
+		$iteratorMode = \FilesystemIterator::UNIX_PATHS |
+			\FilesystemIterator::SKIP_DOTS |
+			\FilesystemIterator::CURRENT_AS_FILEINFO;
+
+		if ($recursive) {
+			$iterator = new \RecursiveIteratorIterator(
+				new \RecursiveDirectoryIterator($path, $iteratorMode),
+				\RecursiveIteratorIterator::SELF_FIRST
+			);
+		} else {
+			$iterator = new \RecursiveDirectoryIterator($path, $iteratorMode);
+		}
+
+		while ($iterator->valid()) {
+			/** @var $entry \SplFileInfo */
+			$entry = $iterator->current();
+
+			if ((($entry->isFile() && $includeFiles) || ($entry->isDir() && $includeDirectories)) && $entry->getFilename() !== '') {
+				$entryIdentifier = $this->stripStreamWrapperPath($entry->getPathname());
+
+				if ($entry->isDir()) {
+					$entryIdentifier = $this->canonicalizeAndCheckFolderIdentifier($entryIdentifier);
+				} else {
+					$entryIdentifier = $this->canonicalizeAndCheckFileIdentifier($entryIdentifier);
+				}
+
+				$directoryEntries[$entryIdentifier] = $entryIdentifier;
+			}
+
+			$iterator->next();
+		}
+
+		return array_values($directoryEntries);
 	}
 
 	/**
