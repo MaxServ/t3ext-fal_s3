@@ -271,7 +271,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 		$folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
 
 		$path = $this->getStreamWrapperPath($folderIdentifier);
-		return is_dir($path);
+
+			// it seems like is_dir does not return the expected result if the folder is created outside this system
+			// implement a fallback to determine if a path "looks" like a folder and issuing a file_exists
+		return is_dir($path) || (substr($path, -1) === '/' && file_exists($path));
 	}
 
 	/**
