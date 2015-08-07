@@ -285,7 +285,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return bool
 	 */
 	public function deleteFolder($folderIdentifier, $deleteRecursively = FALSE) {
-		// TODO: Implement deleteFolder() method.
+		$folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
+		$path = $this->getStreamWrapperPath($folderIdentifier);
+
+		return unlink($path);
 	}
 
 	/**
