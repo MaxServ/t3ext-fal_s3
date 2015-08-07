@@ -258,9 +258,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 		$fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
 
 		$path = $this->getStreamWrapperPath($fileIdentifier);
-
-			// if the last character of the path is not a "/" mark the object as file
-		return substr($path, -1) !== '/' && file_exists($path);
+		return is_file($path);
 	}
 
 	/**
@@ -273,9 +271,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 		$folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
 
 		$path = $this->getStreamWrapperPath($folderIdentifier);
-
-			// if the last character of the path is a "/" mark the object as directory
-		return substr($path, -1) === '/' && file_exists($path);
+		return is_dir($path);
 	}
 
 	/**
