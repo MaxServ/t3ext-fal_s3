@@ -380,7 +380,28 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string The identifier of the file after renaming
 	 */
 	public function renameFile($fileIdentifier, $newName) {
-		// TODO: Implement renameFile() method.
+		$fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
+		$newName = $this->sanitizeFileName($newName);
+		$newName = trim($newName, '/');
+
+		$parentFolderName = dirname($fileIdentifier);
+
+		if ($parentFolderName === '.') {
+			$parentFolderName = '';
+		} else {
+			$parentFolderName .= '/';
+		}
+
+		$parentFolderName = $this->canonicalizeAndCheckFolderIdentifier($parentFolderName);
+
+		$newIdentifier = $parentFolderName . $newName;
+
+		$oldPath = $this->getStreamWrapperPath($fileIdentifier);
+		$newPath = $this->getStreamWrapperPath($newIdentifier);
+
+		rename($oldPath, $newPath);
+
+		return $newIdentifier;
 	}
 
 	/**
