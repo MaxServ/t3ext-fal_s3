@@ -438,7 +438,15 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string
 	 */
 	public function moveFileWithinStorage($fileIdentifier, $targetFolderIdentifier, $newFileName) {
-		// TODO: Implement moveFileWithinStorage() method.
+		$fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
+		$targetFileIdentifier = $this->canonicalizeAndCheckFileIdentifier($targetFolderIdentifier . $newFileName);
+
+		$sourcePath = $this->getStreamWrapperPath($fileIdentifier);
+		$targetPath = $this->getStreamWrapperPath($targetFileIdentifier);
+
+		rename($sourcePath, $targetPath);
+
+		return $targetFileIdentifier;
 	}
 
 	/**
