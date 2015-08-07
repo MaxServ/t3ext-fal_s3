@@ -403,7 +403,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return bool TRUE if deleting the file succeeded
 	 */
 	public function deleteFile($fileIdentifier) {
-		// TODO: Implement deleteFile() method.
+		$fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
+		$path = $this->getStreamWrapperPath($fileIdentifier);
+
+		return unlink($path);
 	}
 
 	/**
