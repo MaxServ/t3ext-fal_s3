@@ -345,7 +345,15 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string the Identifier of the new file
 	 */
 	public function copyFileWithinStorage($fileIdentifier, $targetFolderIdentifier, $fileName) {
-		// TODO: Implement copyFileWithinStorage() method.
+		$fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
+		$targetFileIdentifier = $this->canonicalizeAndCheckFileIdentifier($targetFolderIdentifier . $fileName);
+
+		$sourcePath = $this->getStreamWrapperPath($fileIdentifier);
+		$targetPath = $this->getStreamWrapperPath($targetFileIdentifier);
+
+		copy($sourcePath, $targetPath);
+
+		return $targetFileIdentifier;
 	}
 
 	/**
@@ -516,8 +524,8 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return bool
 	 */
 	public function fileExistsInFolder($fileName, $folderIdentifier) {
-		$this->normalizeIdentifier($folderIdentifier);
-		$this->normalizeIdentifier($fileName);
+		$folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
+		$fileName = $this->canonicalizeAndCheckFileIdentifier($fileName);
 
 		return $this->fileExists($folderIdentifier . $fileName);
 	}
