@@ -108,7 +108,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 			&& array_key_exists('key', $this->configuration) && array_key_exists('secret', $this->configuration)
 			) {
 			$this->s3Client = new Aws\S3\S3Client(array(
-				'version' => 'latest',
+				'version' => '2006-03-01',
 				'region' => $this->configuration['region'],
 				'credentials' => array(
 					'key' => $this->configuration['key'],
