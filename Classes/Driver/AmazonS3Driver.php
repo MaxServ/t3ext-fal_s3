@@ -52,6 +52,19 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	protected $storage;
 
 	/**
+	 * Initialize this driver and expose the capabilities for the repository to use
+	 * 
+	 * @param array $configuration
+	 */
+	public function __construct(array $configuration = array()) {
+		parent::__construct($configuration);
+
+		$this->capabilities = TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_BROWSABLE |
+			TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_PUBLIC |
+			TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_WRITABLE;
+	}
+
+	/**
 	 * Processes the configuration for this driver.
 	 *
 	 * @return void
@@ -125,10 +138,6 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 			$this->configuration['stream_protocol'] = strtolower(self::DRIVER_KEY . '.' . $this->configuration['configurationKey']);
 
 			Aws\S3\StreamWrapper::register($this->s3Client, $this->configuration['stream_protocol']);
-
-			$this->capabilities = TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_BROWSABLE |
-				TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_PUBLIC |
-				TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_WRITABLE;
 		}
 	}
 
