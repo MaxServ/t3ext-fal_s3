@@ -412,7 +412,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return bool TRUE if the operation succeeded
 	 */
 	public function replaceFile($fileIdentifier, $localFilePath) {
-		// TODO: Implement replaceFile() method.
+		$fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
+		$filePath = $this->getStreamWrapperPath($fileIdentifier);
+
+		return copy($localFilePath, $filePath);
 	}
 
 	/**
@@ -622,7 +625,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return void
 	 */
 	public function dumpFileContents($identifier) {
-		// TODO: Implement dumpFileContents() method.
+		echo $this->getFileContents($identifier);
 	}
 
 	/**
