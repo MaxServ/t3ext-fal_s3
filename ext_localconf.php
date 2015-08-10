@@ -22,3 +22,7 @@ $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations']['offli
 	'secret' => '',
 	'title' => 'Dummy S3 configuration (offline)'
 );
+
+\TYPO3\CMS\Core\Resource\Index\ExtractorRegistry::getInstance()->registerExtractionService(
+	'MaxServ\\FalS3\\MetaData\\ImageDimensionsExtractor'
+);

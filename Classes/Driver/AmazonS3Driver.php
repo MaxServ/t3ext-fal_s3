@@ -564,7 +564,12 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string The path to the file on the local disk
 	 */
 	public function getFileForLocalProcessing($fileIdentifier, $writable = TRUE) {
-		// TODO: Implement getFileForLocalProcessing() method.
+		$temporaryFilePath = $this->getTemporaryPathForFile($fileIdentifier);
+		$path = $this->getStreamWrapperPath($fileIdentifier);
+
+		copy($path, $temporaryFilePath);
+
+		return $temporaryFilePath;
 	}
 
 	/**
