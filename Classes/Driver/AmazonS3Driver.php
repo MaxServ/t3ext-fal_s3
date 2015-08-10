@@ -516,7 +516,29 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return bool
 	 */
 	public function copyFolderWithinStorage($sourceFolderIdentifier, $targetFolderIdentifier, $newFolderName) {
-		// TODO: Implement copyFolderWithinStorage() method.
+		$sourceFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($sourceFolderIdentifier);
+		$targetFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($targetFolderIdentifier) .
+			ltrim($this->canonicalizeAndCheckFolderIdentifier($newFolderName), '/');
+
+		$sourceDirectoryContents = $this->resolveFolderEntries($sourceFolderIdentifier, TRUE, TRUE, TRUE);
+
+		foreach ($sourceDirectoryContents as $sourceEntry) {
+			$sourcePath = $this->getStreamWrapperPath($sourceEntry);
+			$targetPath = $this->getStreamWrapperPath(str_replace(
+				$sourceFolderIdentifier,
+				$targetFolderIdentifier,
+				$sourceEntry
+			));
+
+				// use mkdir to create a new directory instead of copying the resource
+			if (substr($sourcePath, -1) === '/') {
+				mkdir($targetPath, $GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask'], TRUE);
+			} else {
+				copy($sourcePath, $targetPath);
+			}
+		}
+
+		return TRUE;
 	}
 
 	/**
