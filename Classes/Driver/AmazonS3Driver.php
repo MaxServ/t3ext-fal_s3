@@ -341,7 +341,13 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string
 	 */
 	public function createFile($fileName, $parentFolderIdentifier) {
-		// TODO: Implement createFile() method.
+		$parentFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($parentFolderIdentifier);
+		$targetFileIdentifier = rtrim($parentFolderIdentifier, '/') . $this->canonicalizeAndCheckFileIdentifier($fileName);
+		$targetFilePath = $this->getStreamWrapperPath($targetFileIdentifier);
+
+		file_put_contents($targetFilePath, '');
+
+		return $targetFileIdentifier;
 	}
 
 	/**
