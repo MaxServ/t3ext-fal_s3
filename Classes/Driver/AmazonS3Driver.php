@@ -320,7 +320,17 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string the identifier of the new file
 	 */
 	public function addFile($localFilePath, $targetFolderIdentifier, $newFileName = '', $removeOriginal = TRUE) {
-		// TODO: Implement addFile() method.
+		$targetFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($targetFolderIdentifier);
+		$targetFileIdentifier = rtrim($targetFolderIdentifier, '/') . $this->canonicalizeAndCheckFileIdentifier($newFileName);
+		$targetFilePath = $this->getStreamWrapperPath($targetFileIdentifier);
+
+		copy($localFilePath, $targetFilePath);
+
+		if ($removeOriginal) {
+			unlink($localFilePath);
+		}
+
+		return $targetFileIdentifier;
 	}
 
 	/**
