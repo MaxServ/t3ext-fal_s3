@@ -114,7 +114,7 @@ class ImageDimensionsExtractor implements TYPO3\CMS\Core\Resource\Index\Extracto
 				'TYPO3\\CMS\\Core\\Imaging\\GraphicalFunctions'
 			);
 
-			$temporaryFilePath = $file->getForLocalProcessing();
+			$temporaryFilePath = $file->getForLocalProcessing(FALSE);
 
 			$imageDimensions = $graphicalFunctionsObject->getImageDimensions($temporaryFilePath);
 
