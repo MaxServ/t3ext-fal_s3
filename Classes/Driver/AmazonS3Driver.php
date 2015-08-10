@@ -510,7 +510,9 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string The file contents
 	 */
 	public function getFileContents($fileIdentifier) {
-		// TODO: Implement getFileContents() method.
+		$fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
+
+		return file_get_contents($this->getStreamWrapperPath($fileIdentifier));
 	}
 
 	/**
@@ -521,7 +523,9 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return int The number of bytes written to the file
 	 */
 	public function setFileContents($fileIdentifier, $contents) {
-		// TODO: Implement setFileContents() method.
+		$fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
+
+		return file_put_contents($this->getStreamWrapperPath($fileIdentifier), $contents);
 	}
 
 	/**
@@ -564,6 +568,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string The path to the file on the local disk
 	 */
 	public function getFileForLocalProcessing($fileIdentifier, $writable = TRUE) {
+		$fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
 		$temporaryFilePath = $this->getTemporaryPathForFile($fileIdentifier);
 		$path = $this->getStreamWrapperPath($fileIdentifier);
 
