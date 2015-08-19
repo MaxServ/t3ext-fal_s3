@@ -184,14 +184,20 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
 		$publicUrl = '';
 
-		if (is_array($this->configuration) && array_key_exists('bucket', $this->configuration) && !empty($this->configuration['bucket'])) {
+		if (is_array($this->configuration) && ((array_key_exists('bucket', $this->configuration) && !empty($this->configuration['bucket']))
+			|| (array_key_exists('publicBaseUrl', $this->configuration) && !empty($this->configuration['publicBaseUrl'])))) {
 			$uriParts = explode('/', $identifier);
 			$uriParts = array_map('rawurlencode', $uriParts);
 
-			$publicUrl = 'https://' .
-				$this->configuration['bucket'] .
-				'.s3.amazonaws.com' .
-				implode('/', $uriParts);
+			if (array_key_exists('publicBaseUrl', $this->configuration) && !empty($this->configuration['publicBaseUrl'])) {
+				$publicUrl = rtrim($this->configuration['publicBaseUrl'], '/') .
+					implode('/', $uriParts);
+			} else {
+				$publicUrl = 'https://' .
+					$this->configuration['bucket'] .
+					'.s3.amazonaws.com' .
+					implode('/', $uriParts);
+			}
 		}
 
 		return $publicUrl;

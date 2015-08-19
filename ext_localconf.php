@@ -20,7 +20,8 @@ $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations']['offli
 	'region' => '',
 	'key' => '',
 	'secret' => '',
-	'title' => 'Dummy S3 configuration (offline)'
+	'title' => 'Dummy S3 configuration (offline)',
+	'publicBaseUrl' => ''
 );
 
 \TYPO3\CMS\Core\Resource\Index\ExtractorRegistry::getInstance()->registerExtractionService(
