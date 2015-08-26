@@ -43,3 +43,9 @@ $signalSlotDispatcher->connect(
 	'MaxServ\\FalS3\\MetaData\\RecordMonitor',
 	'recordUpdatedOrCreated'
 );
+
+$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['deployer']['configuration']['FalS3.yaml'] = array(
+	'converter' => 'MaxServ\\FalS3\\Configuration\\ConfigurationConverter',
+	'definition' => 'MaxServ\\FalS3\\Configuration\\ConfigurationDefinition',
+	'loader' => 'MaxServ\\FalS3\\Configuration\\ConfigurationLoader'
+);
