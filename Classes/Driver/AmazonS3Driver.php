@@ -689,12 +689,17 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
 		$path = $this->getStreamWrapperPath($fileIdentifier);
 
+			// if a mimetype can't be resolved use application/octet-stream
+			// see http://stackoverflow.com/a/12560996
+			// just returning NULL leads to errors while persisting
+		$mimetype = GuzzleHttp\Psr7\mimetype_from_filename($path);
+
 		return array(
 			'name' => basename($fileIdentifier),
 			'identifier' => $fileIdentifier,
 			'ctime' => filectime($path),
 			'mtime' => filemtime($path),
-			'mimetype' => GuzzleHttp\Psr7\mimetype_from_filename($path),
+			'mimetype' => $mimetype !== NULL ? $mimetype : 'application/octet-stream',
 			'size' => (int) filesize($path),
 			'identifier_hash' => $this->hashIdentifier($fileIdentifier),
 			'folder_hash' => $this->hashIdentifier(TYPO3\CMS\Core\Utility\PathUtility::dirname($fileIdentifier)),
@@ -735,22 +740,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return array of FileIdentifiers
 	 */
 	public function getFilesInFolder($folderIdentifier, $start = 0, $numberOfItems = 0, $recursive = FALSE, array $filenameFilterCallbacks = array(), $sort = '', $sortRev = FALSE) {
-		$fileIdentifiers = array();
-		$folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
-		$folderIdentifier = rtrim($folderIdentifier, '/');
-
-		$directoryContents = new \DirectoryIterator($this->getStreamWrapperPath($folderIdentifier));
-
-		foreach ($directoryContents as $file) {
-			$newFileIdentifier = $folderIdentifier . $this->canonicalizeAndCheckFileIdentifier($file->getFilename());
-			$path = $this->getStreamWrapperPath($newFileIdentifier);
-
-			if (!$file->isDot() && is_file($path)) {
-				$fileIdentifiers[] = $newFileIdentifier;
-			}
-		}
-
-		return $fileIdentifiers;
+		return $this->resolveFolderEntries($folderIdentifier, $recursive, TRUE, FALSE);
 	}
 
 	/**
@@ -770,20 +760,15 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return array of Folder Identifier
 	 */
 	public function getFoldersInFolder($folderIdentifier, $start = 0, $numberOfItems = 0, $recursive = FALSE, array $folderNameFilterCallbacks = array(), $sort = '', $sortRev = FALSE) {
-		$folderIdentifiers = array();
-		$folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
-		$folderIdentifier = rtrim($folderIdentifier, '/');
+		$folderIdentifiers = $this->resolveFolderEntries($folderIdentifier, $recursive, FALSE, TRUE);
+		$processingFolder = $this->getProcessingFolder();
+		$processingFolderLength = strlen($processingFolder);
 
-		$directoryContents = new \DirectoryIterator($this->getStreamWrapperPath($folderIdentifier));
-
-		foreach ($directoryContents as $dir) {
-			$newFolderIdentifier = $folderIdentifier . $this->canonicalizeAndCheckFileIdentifier($dir->getFilename());
-			$path = $this->getStreamWrapperPath($newFolderIdentifier);
-
-			if (!$dir->isDot() && $dir->getFilename() !== $this->getProcessingFolder() && is_dir($path)) {
-				$folderIdentifiers[] = $newFolderIdentifier;
-			}
-		}
+			// remove the _processed_ folder
+		$folderIdentifiers = array_filter($folderIdentifiers, function ($identifier) use ($processingFolder, $processingFolderLength) {
+				// strip the last / and check if the last part of the identifier matches the one for the processing folder
+			return substr(rtrim($identifier, '/'), (-1 * $processingFolderLength)) !== $processingFolder;
+		});
 
 		return $folderIdentifiers;
 	}
