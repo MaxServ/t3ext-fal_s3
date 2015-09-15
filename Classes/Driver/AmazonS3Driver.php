@@ -689,12 +689,17 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
 		$path = $this->getStreamWrapperPath($fileIdentifier);
 
+			// if a mimetype can't be resolved use application/octet-stream
+			// see http://stackoverflow.com/a/12560996
+			// just returning NULL leads to errors while persisting
+		$mimetype = GuzzleHttp\Psr7\mimetype_from_filename($path);
+
 		return array(
 			'name' => basename($fileIdentifier),
 			'identifier' => $fileIdentifier,
 			'ctime' => filectime($path),
 			'mtime' => filemtime($path),
-			'mimetype' => GuzzleHttp\Psr7\mimetype_from_filename($path),
+			'mimetype' => $mimetype !== NULL ? $mimetype : 'application/octet-stream',
 			'size' => (int) filesize($path),
 			'identifier_hash' => $this->hashIdentifier($fileIdentifier),
 			'folder_hash' => $this->hashIdentifier(TYPO3\CMS\Core\Utility\PathUtility::dirname($fileIdentifier)),
