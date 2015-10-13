@@ -744,6 +744,17 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	}
 
 	/**
+	 * Returns the identifier of a file inside the folder
+	 *
+	 * @param string $fileName
+	 * @param string $folderIdentifier
+	 * @return string file identifier
+	 */
+	public function getFileInFolder($fileName, $folderIdentifier) {
+		return $this->canonicalizeAndCheckFileIdentifier($folderIdentifier . '/' . $fileName);
+	}
+
+	/**
 	 * Returns a list of folders inside the specified path
 	 *
 	 * @param string $folderIdentifier
@@ -771,6 +782,17 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 		});
 
 		return $folderIdentifiers;
+	}
+
+	/**
+	 * Returns the identifier of a folder inside the folder
+	 *
+	 * @param string $folderName The name of the target folder
+	 * @param string $folderIdentifier
+	 * @return string folder identifier
+	 */
+	public function getFolderInFolder($folderName, $folderIdentifier) {
+		return $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier . '/' . $folderName);
 	}
 
 	/**
