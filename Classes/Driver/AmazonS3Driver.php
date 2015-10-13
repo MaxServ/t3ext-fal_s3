@@ -882,8 +882,8 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	/**
 	 * @return \TYPO3\CMS\Core\Resource\ResourceStorage
 	 */
-	protected function getStorage(){
-		if(!$this->storage){
+	protected function getStorage() {
+		if (!$this->storage) {
 			/** @var $storageRepository \TYPO3\CMS\Core\Resource\StorageRepository */
 			$storageRepository = TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Core\Resource\StorageRepository');
 			$this->storage = $storageRepository->findByUid($this->storageUid);
@@ -895,7 +895,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	/**
 	 * @return string
 	 */
-	protected function getProcessingFolder(){
+	protected function getProcessingFolder() {
 		return $this->getStorage()->getProcessingFolder()->getName();
 	}
 }
