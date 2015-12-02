@@ -160,7 +160,13 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string
 	 */
 	public function getRootLevelFolder() {
-		return '/';
+		$rootLevelFolder = '/';
+
+		if (array_key_exists('basePath', $this->configuration) && !empty($this->configuration['basePath'])) {
+			$rootLevelFolder = trim($this->configuration['basePath'], '/') . '/';
+		}
+
+		return $rootLevelFolder;
 	}
 
 	/**
