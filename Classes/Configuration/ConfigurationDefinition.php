@@ -53,10 +53,10 @@ class ConfigurationDefinition implements Symfony\Component\Config\Definition\Con
 				->scalarNode('key')->isRequired()->end()
 				->scalarNode('secret')->isRequired()->end()
 				->scalarNode('title')->isRequired()->end()
+				->scalarNode('basePath')->end()
 				->scalarNode('publicBaseUrl')->end()
 			->scalarNode('name')->end()
-			->end()
-		;
+			->end();
 
 		return $treeBuilder;
 	}
