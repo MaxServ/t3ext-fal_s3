@@ -182,20 +182,26 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	public function getPublicUrl($identifier) {
 		$identifier = $this->canonicalizeAndCheckFileIdentifier($identifier);
 
+			// if a basePath is configured prepend it to the file identifier
+			// keep in mind that the basePath is appended to the public baseUrl
+		if (array_key_exists('basePath', $this->configuration) && !empty($this->configuration['basePath'])) {
+			$identifier = '/' . trim($this->configuration['basePath'], '/') . $identifier;
+		}
+
 		$publicUrl = '';
 
 		if (is_array($this->configuration) && ((array_key_exists('bucket', $this->configuration) && !empty($this->configuration['bucket']))
 			|| (array_key_exists('publicBaseUrl', $this->configuration) && !empty($this->configuration['publicBaseUrl'])))) {
-			$uriParts = explode('/', $identifier);
+			$uriParts = TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('/', $identifier, TRUE);
 			$uriParts = array_map('rawurlencode', $uriParts);
 
 			if (array_key_exists('publicBaseUrl', $this->configuration) && !empty($this->configuration['publicBaseUrl'])) {
-				$publicUrl = rtrim($this->configuration['publicBaseUrl'], '/') .
+				$publicUrl = rtrim($this->configuration['publicBaseUrl'], '/') . '/' .
 					implode('/', $uriParts);
 			} else {
 				$publicUrl = 'https://' .
 					$this->configuration['bucket'] .
-					'.s3.amazonaws.com' .
+					'.s3.amazonaws.com/' .
 					implode('/', $uriParts);
 			}
 		}
@@ -829,6 +835,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	protected function getStreamWrapperPath($file) {
 		$basePath = $this->configuration['stream_protocol'] . '://' . $this->configuration['bucket'];
 
+		if (array_key_exists('basePath', $this->configuration) && !empty($this->configuration['basePath'])) {
+			$basePath .= '/' . trim($this->configuration['basePath'], '/');
+		}
+
 		if ($file instanceof TYPO3\CMS\Core\Resource\FileInterface) {
 			$identifier = $file->getIdentifier();
 		} elseif ($file instanceof TYPO3\CMS\Core\Resource\Folder) {
@@ -847,8 +857,13 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string
 	 */
 	protected function stripStreamWrapperPath($path) {
+		$basePath = $this->configuration['stream_protocol'] . '://' . $this->configuration['bucket'];
+
+		if (array_key_exists('basePath', $this->configuration) && !empty($this->configuration['basePath'])) {
+			$basePath .= '/' . trim($this->configuration['basePath'], '/');
+		}
 		return str_replace(
-			$this->configuration['stream_protocol'] . '://' . $this->configuration['bucket'],
+			$basePath,
 			'',
 			$path
 		);
