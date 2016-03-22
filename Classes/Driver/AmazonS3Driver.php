@@ -52,6 +52,13 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	protected $storage;
 
 	/**
+	 * List of temporary files
+	 *
+	 * @var array
+	 */
+	protected $temporaryFiles = array();
+
+	/**
 	 * Initialize this driver and expose the capabilities for the repository to use
 	 * 
 	 * @param array $configuration
@@ -62,6 +69,19 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 		$this->capabilities = TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_BROWSABLE |
 			TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_PUBLIC |
 			TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_WRITABLE;
+	}
+
+	/**
+	 * Remove all temporary created files when the object is destroyed.
+	 *
+	 * @return void
+	 */
+	public function __destruct() {
+		foreach ($this->temporaryFiles as $temporaryFile) {
+			if (file_exists($temporaryFile)) {
+				unlink($temporaryFile);
+			}
+		}
 	}
 
 	/**
@@ -626,6 +646,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 		$path = $this->getStreamWrapperPath($fileIdentifier);
 
 		copy($path, $temporaryFilePath);
+
+		if (!$writable) {
+			$this->temporaryFiles[] = $temporaryFilePath;
+		}
 
 		return $temporaryFilePath;
 	}
