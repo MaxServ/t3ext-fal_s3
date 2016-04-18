@@ -2,7 +2,7 @@
 
 $EM_CONF[$_EXTKEY] = array(
 	'title' => 'S3 driver for FAL',
-	'description' => 'Connect FAL/TYPO3 to any of the configured S3 buckets with a few clicks. Supports read/write separation across multiple buckets.',
+	'description' => 'Connect FAL/TYPO3 to any of the configured S3 buckets with a few clicks. File based configuration allows specific buckets depending on the context of your application.',
 	'category' => 'misc',
 	'author' => 'Arno Schoon',
 	'author_email' => 'arno@maxserv.com',

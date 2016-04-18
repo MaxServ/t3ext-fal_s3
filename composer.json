@@ -1,6 +1,20 @@
 {
     "name": "maxserv/fal_s3",
+    "description": "Connect FAL/TYPO3 to any of the configured S3 buckets with a few clicks. File based configuration allows specific buckets depending on the context of your application.",
     "type": "typo3-cms-extension",
+    "keywords": [
+        "TYPO3 CMS",
+        "FAL",
+        "S3"
+    ],
+    "homepage": "https://www.maxserv.com",
+    "authors": [
+        {
+            "name": "Arno Schoon",
+            "email": "arno@maxserv.com",
+            "role": "Lead Developer"
+        }
+    ],
     "autoload": {
         "psr-4": {
             "MaxServ\\FalS3\\": "Classes/"
