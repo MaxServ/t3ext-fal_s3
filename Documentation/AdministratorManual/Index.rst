@@ -16,7 +16,9 @@ Installation
 
 As stated in the previous chapter, this extension must be installed using Composer to be able to use the AWS SDK. From that point on configuration is pretty straight-forward.
 
-Head over to your CLI and run the following command::
+Head over to your CLI and run the following command
+
+.. code-block:: bash
 
 	composer require maxserv/fal_s3
 
@@ -25,7 +27,9 @@ This wil take care of installing all dependencies like the AWS SDK and this exte
 Configuration
 -------------
 
-Add the following snippet to your :code:`AdditionalConfiguration.php` and adjust the values to meet your setup::
+Add the following snippet to your :code:`AdditionalConfiguration.php` and adjust the values to meet your setup
+
+.. code-block:: php
 
 	$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations']['contentStorage'] = array(
 		'basePath' => '/{$FOLDER_PREFIX}/'
