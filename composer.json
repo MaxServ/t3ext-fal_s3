@@ -2,6 +2,7 @@
     "name": "maxserv/fal_s3",
     "description": "Connect FAL/TYPO3 to any of the configured S3 buckets with a few clicks. File based configuration allows specific buckets depending on the context of your application.",
     "type": "typo3-cms-extension",
+    "license": "GPL-2.0",
     "keywords": [
         "TYPO3 CMS",
         "FAL",
