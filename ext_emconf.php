@@ -9,10 +9,11 @@ $EM_CONF[$_EXTKEY] = array(
 	'author_company' => 'MaxServ B.V.',
 	'state' => 'beta',
 	'clearCacheOnLoad' => 0,
-	'version' => '0.0.1',
+	'version' => '1.0.0',
 	'_md5_values_when_last_written' => 'a:0:{}',
 	'constraints' => array(
 		'depends' => array(
+			'typo3' => '6.2.12-7.2.99',
 		),
 		'conflicts' => array(
 		),
