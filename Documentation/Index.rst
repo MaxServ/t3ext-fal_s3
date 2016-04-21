@@ -24,7 +24,8 @@ S3 driver for FAL
 		en
 
 	:Description:
-		Connect FAL/TYPO3 to any of the configured S3 buckets with a few clicks. File based configuration allows specific buckets depending on the context of your application.
+		Connect FAL/TYPO3 to any of the configured S3 buckets with a few clicks.
+		File based configuration allows specific buckets depending on the context of your application.
 
 	:Keywords:
 		FAL, S3
