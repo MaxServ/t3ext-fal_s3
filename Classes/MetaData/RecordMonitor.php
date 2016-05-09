@@ -28,7 +28,8 @@ class RecordMonitor {
 	 * Update the dimension of an image directly after creation
 	 *
 	 * @param array $data
-	 * @return void|null
+	 *
+	 * @return void
 	 */
 	public function recordUpdatedOrCreated(array $data) {
 		$metaDataRepository = NULL;

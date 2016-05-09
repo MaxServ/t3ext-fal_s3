@@ -49,7 +49,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
 	/**
 	 * Initialize this driver and expose the capabilities for the repository to use
-	 * 
+	 *
 	 * @param array $configuration
 	 */
 	public function __construct(array $configuration = array()) {

@@ -23,7 +23,7 @@ class FlexFormUtility {
 
 	/**
 	 * @param array $parameters
-	 * @return string
+	 * @return void
 	 */
 	public function getStorageConfigurations(array $parameters) {
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']) && array_key_exists('fal_s3', $GLOBALS['TYPO3_CONF_VARS']['EXTCONF'])
