@@ -32,7 +32,7 @@ class ConfigurationLoader extends Symfony\Component\Config\Loader\FileLoader {
 	 * @return array
 	 * @throws \Exception If something went wrong
 	 */
-	public function load($resource, $type = null) {
+	public function load($resource, $type = NULL) {
 		return Symfony\Component\Yaml\Yaml::parse(file_get_contents($resource));
 	}
 
@@ -44,7 +44,7 @@ class ConfigurationLoader extends Symfony\Component\Config\Loader\FileLoader {
 	 *
 	 * @return bool True if this class supports the given resource, false otherwise
 	 */
-	public function supports($resource, $type = null) {
+	public function supports($resource, $type = NULL) {
 		return is_string($resource) && strpos($resource, 'FalS3.yaml') !== FALSE;
 	}
 
