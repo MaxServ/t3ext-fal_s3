@@ -21,7 +21,9 @@ $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations']['offli
 	'key' => '',
 	'secret' => '',
 	'title' => 'Dummy S3 configuration (offline)',
-	'publicBaseUrl' => ''
+	'publicBaseUrl' => '',
+	'defaultFolder' => 'user_upload',
+	'basePath' => '/assets/'
 );
 
 \TYPO3\CMS\Core\Resource\Index\ExtractorRegistry::getInstance()->registerExtractionService(

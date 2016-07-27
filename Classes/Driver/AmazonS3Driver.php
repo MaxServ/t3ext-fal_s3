@@ -178,7 +178,17 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 	 * @return string
 	 */
 	public function getDefaultFolder() {
-		return $this->getRootLevelFolder();
+		$defaultFolder = NULL;
+
+		if (array_key_exists('defaultFolder', $this->configuration)) {
+			if (!$this->folderExists($this->configuration['defaultFolder'])) {
+				$defaultFolder = $this->createFolder($this->configuration['defaultFolder']);
+			} else {
+				$defaultFolder = $this->canonicalizeAndCheckFolderIdentifier($this->configuration['defaultFolder']);
+			}
+		}
+
+		return $defaultFolder !== NULL ? $defaultFolder : $this->getRootLevelFolder();
 	}
 
 	/**
