@@ -298,7 +298,8 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 		$fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
 
 		$path = $this->getStreamWrapperPath($fileIdentifier);
-		return is_file($path);
+
+		return is_file(rtrim($path, '/'));
 	}
 
 	/**
@@ -312,9 +313,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
 		$path = $this->getStreamWrapperPath($folderIdentifier);
 
-			// it seems like is_dir does not return the expected result if the folder is created outside this system
-			// implement a fallback to determine if a path "looks" like a folder and issuing a file_exists
-		return is_dir($path) || (substr($path, -1) === '/' && file_exists($path));
+		return is_dir(rtrim($path, '/'));
 	}
 
 	/**
