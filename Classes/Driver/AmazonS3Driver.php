@@ -146,7 +146,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 				// to prevent collisions between multiple S3 drivers using a stream_wrapper use a unique protocol key
 			$this->configuration['stream_protocol'] = strtolower(self::DRIVER_KEY . '.' . $this->configuration['configurationKey']);
 
-			Aws\S3\StreamWrapper::register($this->s3Client, $this->configuration['stream_protocol']);
+			Aws\S3\StreamWrapper::register($this->s3Client, $this->configuration['stream_protocol'], new Cache());
 		}
 	}
 
