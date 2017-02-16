@@ -45,12 +45,14 @@ class Cache extends Aws\LruArrayCache
     public function get($key)
     {
         $cacheFrontend = self::getCacheFrontend();
+        $entryIdentifier = self::buildEntryIdentifier($key);
 
         $firstLevel = parent::get($key);
 
-        $secondLevelKey = md5($key);
         // if the LRU cache doesn't contain the item try the remote backend
-        $secondLevel = $firstLevel === null && $cacheFrontend->has($secondLevelKey) ? $cacheFrontend->get($secondLevelKey) : null;
+        $secondLevel = ($firstLevel === null && $cacheFrontend->has($entryIdentifier))
+            ? $cacheFrontend->get($entryIdentifier)
+            : null;
 
         return $firstLevel !== null ? $firstLevel : $secondLevel;
     }
@@ -67,10 +69,11 @@ class Cache extends Aws\LruArrayCache
     public function set($key, $value, $ttl = 0)
     {
         $cacheFrontend = self::getCacheFrontend();
+        $entryIdentifier = self::buildEntryIdentifier($key);
 
         parent::set($key, $value, $ttl);
 
-        $cacheFrontend->set(md5($key), $value, array(), $ttl);
+        $cacheFrontend->set($entryIdentifier, $value, array(), $ttl);
     }
 
     /**
@@ -83,16 +86,31 @@ class Cache extends Aws\LruArrayCache
     public function remove($key)
     {
         $cacheFrontend = self::getCacheFrontend();
+        $entryIdentifier = self::buildEntryIdentifier($key);
 
         parent::remove($key);
 
-        $cacheFrontend->remove(md5($key));
+        // only issue a remove if the entry is still present
+        if ($cacheFrontend->has($entryIdentifier)) {
+            $cacheFrontend->remove($entryIdentifier);
+        }
+    }
+
+    /**
+     * @param string $key
+     * @param string $prefix
+     *
+     * @return string
+     */
+    public static function buildEntryIdentifier($key, $prefix = 'fi')
+    {
+        return $prefix . '-' . md5($key);
     }
 
     /**
      * @return \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend
      */
-    protected static function getCacheFrontend()
+    public static function getCacheFrontend()
     {
         $cacheManager = Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager');
 
