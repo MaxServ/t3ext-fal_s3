@@ -21,21 +21,23 @@ use MaxServ\Deployer;
  *
  * @package MaxServ\FalS3\Configuration
  */
-class ConfigurationConverter implements Deployer\Configuration\Converter\ConfigurationConverterInterface {
+class ConfigurationConverter implements Deployer\Configuration\Converter\ConfigurationConverterInterface
+{
 
-	/**
-	 * Convert/translate an array with configuration directives to the TYPO3_CONF_VARS equivalent
-	 *
-	 * @param array $processedConfiguration
-	 * @return array
-	 */
-	public function convertToLocalConfigurationFormat($processedConfiguration) {
-		return array(
-			'EXTCONF' => array(
-				'fal_s3' => array(
-					'storageConfigurations' => $processedConfiguration
-				)
-			)
-		);
-	}
+    /**
+     * Convert/translate an array with configuration directives to the TYPO3_CONF_VARS equivalent
+     *
+     * @param array $processedConfiguration
+     * @return array
+     */
+    public function convertToLocalConfigurationFormat($processedConfiguration)
+    {
+        return array(
+            'EXTCONF' => array(
+                'fal_s3' => array(
+                    'storageConfigurations' => $processedConfiguration
+                )
+            )
+        );
+    }
 }

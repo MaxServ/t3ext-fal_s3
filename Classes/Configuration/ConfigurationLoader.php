@@ -21,31 +21,33 @@ use Symfony;
  *
  * @package MaxServ\FalS3\Configuration
  */
-class ConfigurationLoader extends Symfony\Component\Config\Loader\FileLoader {
+class ConfigurationLoader extends Symfony\Component\Config\Loader\FileLoader
+{
 
-	/**
-	 * Loads a resource.
-	 *
-	 * @param mixed $resource The resource
-	 * @param string|null $type The resource type or null if unknown
-	 *
-	 * @return array
-	 * @throws \Exception If something went wrong
-	 */
-	public function load($resource, $type = NULL) {
-		return Symfony\Component\Yaml\Yaml::parse(file_get_contents($resource));
-	}
+    /**
+     * Loads a resource.
+     *
+     * @param mixed $resource The resource
+     * @param string|null $type The resource type or null if unknown
+     *
+     * @return array
+     * @throws \Exception If something went wrong
+     */
+    public function load($resource, $type = null)
+    {
+        return Symfony\Component\Yaml\Yaml::parse(file_get_contents($resource));
+    }
 
-	/**
-	 * Returns whether this class supports the given resource.
-	 *
-	 * @param mixed $resource A resource
-	 * @param string|null $type The resource type or null if unknown
-	 *
-	 * @return bool True if this class supports the given resource, false otherwise
-	 */
-	public function supports($resource, $type = NULL) {
-		return is_string($resource) && strpos($resource, 'FalS3.yaml') !== FALSE;
-	}
-
+    /**
+     * Returns whether this class supports the given resource.
+     *
+     * @param mixed $resource A resource
+     * @param string|null $type The resource type or null if unknown
+     *
+     * @return bool True if this class supports the given resource, false otherwise
+     */
+    public function supports($resource, $type = null)
+    {
+        return is_string($resource) && strpos($resource, 'FalS3.yaml') !== false;
+    }
 }

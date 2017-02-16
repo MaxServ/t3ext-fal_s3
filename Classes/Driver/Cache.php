@@ -27,89 +27,93 @@ use TYPO3\CMS\Core;
  *
  * @package MaxServ\FalS3\Driver
  */
-class Cache extends Aws\LruArrayCache {
+class Cache extends Aws\LruArrayCache
+{
 
-	/**
-	 * @var \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend
-	 */
-	protected static $cacheFrontend;
+    /**
+     * @var \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend
+     */
+    protected static $cacheFrontend;
 
-	/**
-	 * Get a cache item by key.
-	 *
-	 * @param string $key Key to retrieve.
-	 *
-	 * @return mixed|null Returns the value or null if not found.
-	 */
-	public function get($key) {
-		$cacheFrontend = self::getCacheFrontend();
+    /**
+     * Get a cache item by key.
+     *
+     * @param string $key Key to retrieve.
+     *
+     * @return mixed|null Returns the value or null if not found.
+     */
+    public function get($key)
+    {
+        $cacheFrontend = self::getCacheFrontend();
 
-		$firstLevel = parent::get($key);
+        $firstLevel = parent::get($key);
 
-		$secondLevelKey = md5($key);
-		// if the LRU cache doesn't contain the item try the remote backend
-		$secondLevel = $firstLevel === NULL && $cacheFrontend->has($secondLevelKey) ? $cacheFrontend->get($secondLevelKey) : NULL;
+        $secondLevelKey = md5($key);
+        // if the LRU cache doesn't contain the item try the remote backend
+        $secondLevel = $firstLevel === null && $cacheFrontend->has($secondLevelKey) ? $cacheFrontend->get($secondLevelKey) : null;
 
-		return $firstLevel !== NULL ? $firstLevel : $secondLevel;
-	}
+        return $firstLevel !== null ? $firstLevel : $secondLevel;
+    }
 
-	/**
-	 * Set a cache key value.
-	 *
-	 * @param string $key Key to set
-	 * @param mixed $value Value to set.
-	 * @param int $ttl In seconds, 0 = unlimited
-	 *
-	 * @return void
-	 */
-	public function set($key, $value, $ttl = 0) {
-		$cacheFrontend = self::getCacheFrontend();
+    /**
+     * Set a cache key value.
+     *
+     * @param string $key Key to set
+     * @param mixed $value Value to set.
+     * @param int $ttl In seconds, 0 = unlimited
+     *
+     * @return void
+     */
+    public function set($key, $value, $ttl = 0)
+    {
+        $cacheFrontend = self::getCacheFrontend();
 
-		parent::set($key, $value, $ttl);
+        parent::set($key, $value, $ttl);
 
-		$cacheFrontend->set(md5($key), $value, array(), $ttl);
-	}
+        $cacheFrontend->set(md5($key), $value, array(), $ttl);
+    }
 
-	/**
-	 * Remove a cache key.
-	 *
-	 * @param string $key Key to remove.
-	 *
-	 * @return void
-	 */
-	public function remove($key) {
-		$cacheFrontend = self::getCacheFrontend();
+    /**
+     * Remove a cache key.
+     *
+     * @param string $key Key to remove.
+     *
+     * @return void
+     */
+    public function remove($key)
+    {
+        $cacheFrontend = self::getCacheFrontend();
 
-		parent::remove($key);
+        parent::remove($key);
 
-		$cacheFrontend->remove(md5($key));
-	}
+        $cacheFrontend->remove(md5($key));
+    }
 
-	/**
-	 * @return \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend
-	 */
-	protected static function getCacheFrontend() {
-		$cacheManager = Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager');
+    /**
+     * @return \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend
+     */
+    protected static function getCacheFrontend()
+    {
+        $cacheManager = Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager');
 
-		if (self::$cacheFrontend === NULL
-			&& is_array($GLOBALS['TYPO3_CONF_VARS']) && array_key_exists('SYS', $GLOBALS['TYPO3_CONF_VARS'])
-			&& is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']) && array_key_exists('caching', $GLOBALS['TYPO3_CONF_VARS']['SYS'])
-			&& is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching'])
-			&& array_key_exists('cacheConfigurations', $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching'])
-			&& is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations'])
-			&& array_key_exists('tx_fal_s3', $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations'])
-			&& $cacheManager instanceof Core\Cache\CacheManager
-		) {
-			$cacheManager->setCacheConfigurations(array(
-				'tx_fal_s3' => $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3']
-			));
-		}
+        if (self::$cacheFrontend === null
+            && is_array($GLOBALS['TYPO3_CONF_VARS']) && array_key_exists('SYS', $GLOBALS['TYPO3_CONF_VARS'])
+            && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']) && array_key_exists('caching', $GLOBALS['TYPO3_CONF_VARS']['SYS'])
+            && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching'])
+            && array_key_exists('cacheConfigurations', $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching'])
+            && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations'])
+            && array_key_exists('tx_fal_s3', $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations'])
+            && $cacheManager instanceof Core\Cache\CacheManager
+        ) {
+            $cacheManager->setCacheConfigurations(array(
+                'tx_fal_s3' => $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3']
+            ));
+        }
 
-		if ($cacheManager instanceof Core\Cache\CacheManager && $cacheManager->hasCache('tx_fal_s3')) {
-			self::$cacheFrontend = $cacheManager->getCache('tx_fal_s3');
-		}
+        if ($cacheManager instanceof Core\Cache\CacheManager && $cacheManager->hasCache('tx_fal_s3')) {
+            self::$cacheFrontend = $cacheManager->getCache('tx_fal_s3');
+        }
 
-		return self::$cacheFrontend;
-	}
-
+        return self::$cacheFrontend;
+    }
 }

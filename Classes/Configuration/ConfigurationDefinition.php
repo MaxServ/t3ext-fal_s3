@@ -21,33 +21,35 @@ use Symfony;
  *
  * @package MaxServ\FalS3\Configuration
  */
-class ConfigurationDefinition implements Symfony\Component\Config\Definition\ConfigurationInterface {
+class ConfigurationDefinition implements Symfony\Component\Config\Definition\ConfigurationInterface
+{
 
-	/**
-	 * Generates the configuration tree builder.
-	 *
-	 * @return \Symfony\Component\Config\Definition\Builder\TreeBuilder The tree builder
-	 */
-	public function getConfigTreeBuilder() {
-		$treeBuilder = new Symfony\Component\Config\Definition\Builder\TreeBuilder();
+    /**
+     * Generates the configuration tree builder.
+     *
+     * @return \Symfony\Component\Config\Definition\Builder\TreeBuilder The tree builder
+     */
+    public function getConfigTreeBuilder()
+    {
+        $treeBuilder = new Symfony\Component\Config\Definition\Builder\TreeBuilder();
 
-		$rootNode = $treeBuilder->root('falS3');
+        $rootNode = $treeBuilder->root('falS3');
 
-		$rootNode
-			->useAttributeAsKey('name')
-			->prototype('array')
-			->children()
-				->scalarNode('bucket')->isRequired()->end()
-				->scalarNode('region')->isRequired()->end()
-				->scalarNode('key')->isRequired()->end()
-				->scalarNode('secret')->isRequired()->end()
-				->scalarNode('title')->isRequired()->end()
-				->scalarNode('basePath')->defaultValue('')->end()
-				->scalarNode('publicBaseUrl')->end()
-				->scalarNode('defaultFolder')->defaultValue('user_upload')->end()
-			->scalarNode('name')->end()
-			->end();
+        $rootNode
+            ->useAttributeAsKey('name')
+            ->prototype('array')
+            ->children()
+                ->scalarNode('bucket')->isRequired()->end()
+                ->scalarNode('region')->isRequired()->end()
+                ->scalarNode('key')->isRequired()->end()
+                ->scalarNode('secret')->isRequired()->end()
+                ->scalarNode('title')->isRequired()->end()
+                ->scalarNode('basePath')->defaultValue('')->end()
+                ->scalarNode('publicBaseUrl')->end()
+                ->scalarNode('defaultFolder')->defaultValue('user_upload')->end()
+            ->scalarNode('name')->end()
+            ->end();
 
-		return $treeBuilder;
-	}
+        return $treeBuilder;
+    }
 }
