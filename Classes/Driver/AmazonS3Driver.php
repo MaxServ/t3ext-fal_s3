@@ -309,7 +309,14 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
         $folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
         $path = $this->getStreamWrapperPath($folderIdentifier);
 
+        if ($deleteRecursively) {
+            $foldersInFolder = $this->resolveFolderEntries($folderIdentifier, true, false, true);
+
+            array_map(array($this, 'deleteFolder'), $foldersInFolder);
+        }
+
         $this->flushCacheEntriesForFolder($folderIdentifier);
+        $this->flushCacheEntriesForFolder(dirname($folderIdentifier));
 
         return unlink($path);
     }
