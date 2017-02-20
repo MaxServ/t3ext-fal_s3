@@ -44,6 +44,7 @@ class Cache extends Aws\LruArrayCache
      */
     public function get($key)
     {
+        $key = rtrim($key, '/');
         $cacheFrontend = self::getCacheFrontend();
         $entryIdentifier = self::buildEntryIdentifier($key);
 
@@ -68,6 +69,7 @@ class Cache extends Aws\LruArrayCache
      */
     public function set($key, $value, $ttl = 0)
     {
+        $key = rtrim($key, '/');
         $cacheFrontend = self::getCacheFrontend();
         $entryIdentifier = self::buildEntryIdentifier($key);
 
@@ -85,6 +87,7 @@ class Cache extends Aws\LruArrayCache
      */
     public function remove($key)
     {
+        $key = rtrim($key, '/');
         $cacheFrontend = self::getCacheFrontend();
         $entryIdentifier = self::buildEntryIdentifier($key);
 
