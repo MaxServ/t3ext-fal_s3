@@ -44,6 +44,7 @@ class Cache extends Aws\LruArrayCache
      */
     public function get($key)
     {
+        $key = rtrim($key, '/');
         $cacheFrontend = self::getCacheFrontend();
 
         $firstLevel = parent::get($key);
@@ -66,6 +67,7 @@ class Cache extends Aws\LruArrayCache
      */
     public function set($key, $value, $ttl = 0)
     {
+        $key = rtrim($key, '/');
         $cacheFrontend = self::getCacheFrontend();
 
         parent::set($key, $value, $ttl);
@@ -82,6 +84,7 @@ class Cache extends Aws\LruArrayCache
      */
     public function remove($key)
     {
+        $key = rtrim($key, '/');
         $cacheFrontend = self::getCacheFrontend();
 
         parent::remove($key);
