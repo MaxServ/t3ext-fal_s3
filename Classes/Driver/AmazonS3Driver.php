@@ -575,6 +575,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
             $oldEntryPath = $this->getStreamWrapperPath($oldEntryIdentifier);
             $newEntryPath = $this->getStreamWrapperPath($newEntryIdentifier);
 
+            if (is_dir($oldEntryPath)) {
+                $this->flushCacheEntriesForFolder($oldEntryIdentifier);
+            }
+
             rename($oldEntryPath, $newEntryPath);
 
             $renamedEntries[$oldEntryIdentifier] = $newEntryIdentifier;
@@ -584,6 +588,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
         $renamedEntries[$sourceFolderIdentifier] = $targetFolderIdentifier;
 
+        $this->flushCacheEntriesForFolder($sourceFolderIdentifier);
         $this->flushCacheEntriesForFolder(dirname($sourceFolderIdentifier));
         $this->flushCacheEntriesForFolder(dirname($targetFolderIdentifier));
 
