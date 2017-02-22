@@ -264,6 +264,8 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
         mkdir($path, $GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask'], $recursive);
 
+        $this->flushCacheEntriesForFolder($parentFolderIdentifier);
+
         return $identifier;
     }
 
@@ -306,6 +308,15 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
     {
         $folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
         $path = $this->getStreamWrapperPath($folderIdentifier);
+
+        if ($deleteRecursively) {
+            $foldersInFolder = $this->resolveFolderEntries($folderIdentifier, true, false, true);
+
+            array_map(array($this, 'deleteFolder'), $foldersInFolder);
+        }
+
+        $this->flushCacheEntriesForFolder($folderIdentifier);
+        $this->flushCacheEntriesForFolder(dirname($folderIdentifier));
 
         return unlink($path);
     }
@@ -376,6 +387,8 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
             unlink($localFilePath);
         }
 
+        $this->flushCacheEntriesForFolder($targetFolderIdentifier);
+
         return $targetFileIdentifier;
     }
 
@@ -399,6 +412,8 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
             'Body' => ''
         ));
 
+        $this->flushCacheEntriesForFolder($parentFolderIdentifier);
+
         return $targetFileIdentifier;
     }
 
@@ -421,6 +436,8 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
         $targetPath = $this->getStreamWrapperPath($targetFileIdentifier);
 
         copy($sourcePath, $targetPath);
+
+        $this->flushCacheEntriesForFolder($targetFolderIdentifier);
 
         return $targetFileIdentifier;
     }
@@ -455,6 +472,8 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
         rename($oldPath, $newPath);
 
+        $this->flushCacheEntriesForFolder($parentFolderName);
+
         return $newIdentifier;
     }
 
@@ -469,6 +488,8 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
     {
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
         $filePath = $this->getStreamWrapperPath($fileIdentifier);
+
+        $this->flushCacheEntriesForFolder(dirname($fileIdentifier));
 
         return copy($localFilePath, $filePath);
     }
@@ -485,6 +506,8 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
     {
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
         $path = $this->getStreamWrapperPath($fileIdentifier);
+
+        $this->flushCacheEntriesForFolder(dirname($fileIdentifier));
 
         return unlink($path);
     }
@@ -521,6 +544,9 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
         $sourcePath = $this->getStreamWrapperPath($fileIdentifier);
         $targetPath = $this->getStreamWrapperPath($targetFileIdentifier);
 
+        $this->flushCacheEntriesForFolder(dirname($fileIdentifier));
+        $this->flushCacheEntriesForFolder($targetFolderIdentifier);
+
         rename($sourcePath, $targetPath);
 
         return $targetFileIdentifier;
@@ -554,6 +580,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
             $oldEntryPath = $this->getStreamWrapperPath($oldEntryIdentifier);
             $newEntryPath = $this->getStreamWrapperPath($newEntryIdentifier);
 
+            if (is_dir($oldEntryPath)) {
+                $this->flushCacheEntriesForFolder($oldEntryIdentifier);
+            }
+
             rename($oldEntryPath, $newEntryPath);
 
             $renamedEntries[$oldEntryIdentifier] = $newEntryIdentifier;
@@ -562,6 +592,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
         rename($oldPath, $newPath);
 
         $renamedEntries[$sourceFolderIdentifier] = $targetFolderIdentifier;
+
+        $this->flushCacheEntriesForFolder($sourceFolderIdentifier);
+        $this->flushCacheEntriesForFolder(dirname($sourceFolderIdentifier));
+        $this->flushCacheEntriesForFolder(dirname($targetFolderIdentifier));
 
         return $renamedEntries;
     }
@@ -597,6 +631,8 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
                 copy($sourcePath, $targetPath);
             }
         }
+
+        $this->flushCacheEntriesForFolder(dirname($targetFolderIdentifier));
 
         return true;
     }
@@ -948,9 +984,19 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      */
     protected function resolveFolderEntries($folderIdentifier, $recursive = false, $includeFiles = true, $includeDirectories = true)
     {
+        $cacheFrontend = Cache::getCacheFrontend();
         $directoryEntries = array();
         $folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
         $path = $this->getStreamWrapperPath($folderIdentifier);
+
+        $cacheEntryIdentifier = Cache::buildEntryIdentifier(
+            $path . '-' . $recursive . '-' . $includeFiles . '-' . $includeDirectories,
+            'ls'
+        );
+
+        if ($cacheFrontend->has($cacheEntryIdentifier)) {
+            return $cacheFrontend->get($cacheEntryIdentifier);
+        }
 
         $iteratorMode = \FilesystemIterator::UNIX_PATHS |
             \FilesystemIterator::SKIP_DOTS |
@@ -984,7 +1030,11 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
             $iterator->next();
         }
 
-        return array_values($directoryEntries);
+        $arrayValues = array_values($directoryEntries);
+
+        $cacheFrontend->set($cacheEntryIdentifier, $arrayValues, array(Cache::buildEntryIdentifier($path, 'd')), 86400);
+
+        return $arrayValues;
     }
 
     /**
@@ -1007,5 +1057,19 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
     protected function getProcessingFolder()
     {
         return $this->getStorage()->getProcessingFolder()->getName();
+    }
+
+    /**
+     * @param string $folderIdentifier
+     *
+     * @return void
+     */
+    protected function flushCacheEntriesForFolder($folderIdentifier)
+    {
+        $folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
+        $path = $this->getStreamWrapperPath($folderIdentifier);
+
+        // see resolveFolderEntries(), cache entries are tagged with the path of the parent folder
+        Cache::getCacheFrontend()->flushByTag(Cache::buildEntryIdentifier($path, 'd'));
     }
 }
