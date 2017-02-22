@@ -390,9 +390,14 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
     {
         $parentFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($parentFolderIdentifier);
         $targetFileIdentifier = rtrim($parentFolderIdentifier, '/') . $this->canonicalizeAndCheckFileIdentifier($fileName);
-        $targetFilePath = $this->getStreamWrapperPath($targetFileIdentifier);
 
-        file_put_contents($targetFilePath, '');
+        // create an empty file using the putObject method instead of the wrapper
+        // file_put_contents() without data or touch() yield unexpected results
+        $this->s3Client->putObject(array(
+            'Bucket' => $this->configuration['bucket'],
+            'Key' => ltrim($targetFileIdentifier, '/'),
+            'Body' => ''
+        ));
 
         return $targetFileIdentifier;
     }
