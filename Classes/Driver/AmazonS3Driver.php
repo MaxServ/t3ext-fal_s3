@@ -788,15 +788,32 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      */
     public function getFileInfoByIdentifier($fileIdentifier, array $propertiesToExtract = array())
     {
+        $fileExtensionToMimeTypeMapping = array();
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
-
         $path = $this->getStreamWrapperPath($fileIdentifier);
+        $lowercaseFileExtension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SYS'])
+            && array_key_exists('FileInfo', $GLOBALS['TYPO3_CONF_VARS']['SYS'])
+            && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo'])
+            && array_key_exists('fileExtensionToMimeType', $GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo'])
+            && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'])
+        ) {
+            $fileExtensionToMimeTypeMapping = $GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'];
+        }
+
+        $mimetype = GuzzleHttp\Psr7\mimetype_from_extension($lowercaseFileExtension);
+
+        if ($mimetype === null
+            && array_key_exists($lowercaseFileExtension, $fileExtensionToMimeTypeMapping)
+            && !empty($fileExtensionToMimeTypeMapping[$lowercaseFileExtension])
+        ) {
+            $mimetype = $fileExtensionToMimeTypeMapping[$lowercaseFileExtension];
+        }
 
             // if a mimetype can't be resolved use application/octet-stream
             // see http://stackoverflow.com/a/12560996
             // just returning NULL leads to errors while persisting
-        $mimetype = GuzzleHttp\Psr7\mimetype_from_filename($path);
-
         return array(
             'name' => basename($fileIdentifier),
             'identifier' => $fileIdentifier,
