@@ -1001,6 +1001,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      */
     protected function resolveFolderEntries($folderIdentifier, $recursive = false, $includeFiles = true, $includeDirectories = true)
     {
+        $excludedFolders = $this->configuration['excludedFolders'] ?? [];
+        if (in_array($folderIdentifier, $excludedFolders)) {
+            return [];
+        }
         $cacheFrontend = Cache::getCacheFrontend();
         $directoryEntries = array();
         $folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
@@ -1032,7 +1036,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
             /** @var $entry \SplFileInfo */
             $entry = $iterator->current();
 
-            if ((($entry->isFile() && $includeFiles) || ($entry->isDir() && $includeDirectories)) && $entry->getFilename() !== '') {
+            if ((($entry->isFile() && $includeFiles) || ($entry->isDir() && $includeDirectories && !in_array($entry->getFilename(), $excludedFolders, true))) && $entry->getFilename() !== '') {
                 $entryIdentifier = $this->stripStreamWrapperPath($entry->getPathname());
 
                 if ($entry->isDir()) {
