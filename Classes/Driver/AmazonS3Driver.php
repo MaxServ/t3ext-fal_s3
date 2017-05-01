@@ -1001,7 +1001,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      */
     protected function resolveFolderEntries($folderIdentifier, $recursive = false, $includeFiles = true, $includeDirectories = true)
     {
-        $excludedFolders = $this->configuration['excludedFolders'] ?? [];
+        $excludedFolders = isset($this->configuration['excludedFolders']) ? $this->configuration['excludedFolders'] : [];
         if (in_array($folderIdentifier, $excludedFolders)) {
             return [];
         }
