@@ -811,9 +811,16 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
             $mimetype = $fileExtensionToMimeTypeMapping[$lowercaseFileExtension];
         }
 
-            // if a mimetype can't be resolved use application/octet-stream
-            // see http://stackoverflow.com/a/12560996
-            // just returning NULL leads to errors while persisting
+        $fileExtensionToMimeTypeMapping = $GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'];
+        $lowercaseFileExtension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        if (!empty($fileExtensionToMimeTypeMapping[$lowercaseFileExtension])) {
+            $mimetype = $fileExtensionToMimeTypeMapping[$lowercaseFileExtension];
+        } else {
+                // if a mimetype can't be resolved use application/octet-stream
+                // see http://stackoverflow.com/a/12560996
+                // just returning NULL leads to errors while persisting
+            $mimetype = GuzzleHttp\Psr7\mimetype_from_filename($path);
+        }
         return array(
             'name' => basename($fileIdentifier),
             'identifier' => $fileIdentifier,
