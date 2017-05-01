@@ -788,9 +788,28 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      */
     public function getFileInfoByIdentifier($fileIdentifier, array $propertiesToExtract = array())
     {
+        $fileExtensionToMimeTypeMapping = array();
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
-
         $path = $this->getStreamWrapperPath($fileIdentifier);
+        $lowercaseFileExtension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SYS'])
+            && array_key_exists('FileInfo', $GLOBALS['TYPO3_CONF_VARS']['SYS'])
+            && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo'])
+            && array_key_exists('fileExtensionToMimeType', $GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo'])
+            && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'])
+        ) {
+            $fileExtensionToMimeTypeMapping = $GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'];
+        }
+
+        $mimetype = GuzzleHttp\Psr7\mimetype_from_extension($lowercaseFileExtension);
+
+        if ($mimetype === null
+            && array_key_exists($lowercaseFileExtension, $fileExtensionToMimeTypeMapping)
+            && !empty($fileExtensionToMimeTypeMapping[$lowercaseFileExtension])
+        ) {
+            $mimetype = $fileExtensionToMimeTypeMapping[$lowercaseFileExtension];
+        }
 
         $fileExtensionToMimeTypeMapping = $GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'];
         $lowercaseFileExtension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
@@ -802,7 +821,6 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
                 // just returning NULL leads to errors while persisting
             $mimetype = GuzzleHttp\Psr7\mimetype_from_filename($path);
         }
-
         return array(
             'name' => basename($fileIdentifier),
             'identifier' => $fileIdentifier,
@@ -990,6 +1008,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      */
     protected function resolveFolderEntries($folderIdentifier, $recursive = false, $includeFiles = true, $includeDirectories = true)
     {
+        $excludedFolders = $this->configuration['excludedFolders'] ?? [];
+        if (in_array($folderIdentifier, $excludedFolders)) {
+            return [];
+        }
         $cacheFrontend = Cache::getCacheFrontend();
         $directoryEntries = array();
         $folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
@@ -1021,7 +1043,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
             /** @var $entry \SplFileInfo */
             $entry = $iterator->current();
 
-            if ((($entry->isFile() && $includeFiles) || ($entry->isDir() && $includeDirectories)) && $entry->getFilename() !== '') {
+            if ((($entry->isFile() && $includeFiles) || ($entry->isDir() && $includeDirectories && !in_array($entry->getFilename(), $excludedFolders, true))) && $entry->getFilename() !== '') {
                 $entryIdentifier = $this->stripStreamWrapperPath($entry->getPathname());
 
                 if ($entry->isDir()) {

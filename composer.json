@@ -21,8 +21,11 @@
             "MaxServ\\FalS3\\": "Classes/"
         }
     },
+    "replace": {
+        "typo3-ter/fal_s3": "self.version"
+    },
     "require": {
-        "typo3/cms-core": ">=6.2.12, <8.5.99",
+        "typo3/cms-core": ">=6.2.12, <8.9.99",
         "aws/aws-sdk-php": "^3.2.3"
     }
 }
