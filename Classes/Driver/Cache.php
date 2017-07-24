@@ -45,17 +45,15 @@ class Cache extends Aws\LruArrayCache
     public function get($key)
     {
         $key = rtrim($key, '/');
+        $cacheEntry = parent::get($key);
+        if ($cacheEntry) {
+            return $cacheEntry;
+        }
+
         $cacheFrontend = self::getCacheFrontend();
         $entryIdentifier = self::buildEntryIdentifier($key);
 
-        $firstLevel = parent::get($key);
-
-        // if the LRU cache doesn't contain the item try the remote backend
-        $secondLevel = ($firstLevel === null && $cacheFrontend->has($entryIdentifier))
-            ? $cacheFrontend->get($entryIdentifier)
-            : null;
-
-        return $firstLevel !== null ? $firstLevel : $secondLevel;
+        return $cacheFrontend->get($entryIdentifier);
     }
 
     /**
@@ -93,10 +91,7 @@ class Cache extends Aws\LruArrayCache
 
         parent::remove($key);
 
-        // only issue a remove if the entry is still present
-        if ($cacheFrontend->has($entryIdentifier)) {
-            $cacheFrontend->remove($entryIdentifier);
-        }
+        $cacheFrontend->remove($entryIdentifier);
     }
 
     /**
