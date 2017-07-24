@@ -110,26 +110,9 @@ class Cache extends Aws\LruArrayCache
      */
     public static function getCacheFrontend()
     {
-        $cacheManager = Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager');
-
-        if (self::$cacheFrontend === null
-            && is_array($GLOBALS['TYPO3_CONF_VARS']) && array_key_exists('SYS', $GLOBALS['TYPO3_CONF_VARS'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']) && array_key_exists('caching', $GLOBALS['TYPO3_CONF_VARS']['SYS'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching'])
-            && array_key_exists('cacheConfigurations', $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations'])
-            && array_key_exists('tx_fal_s3', $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations'])
-            && $cacheManager instanceof Core\Cache\CacheManager
-        ) {
-            $cacheManager->setCacheConfigurations(array(
-                'tx_fal_s3' => $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3']
-            ));
+        if (self::$cacheFrontend === null && !empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3'])) {
+            self::$cacheFrontend = Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('tx_fal_s3');
         }
-
-        if ($cacheManager instanceof Core\Cache\CacheManager && $cacheManager->hasCache('tx_fal_s3')) {
-            self::$cacheFrontend = $cacheManager->getCache('tx_fal_s3');
-        }
-
         return self::$cacheFrontend;
     }
 }
