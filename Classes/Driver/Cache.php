@@ -45,17 +45,15 @@ class Cache extends Aws\LruArrayCache
     public function get($key)
     {
         $key = rtrim($key, '/');
+        $cacheEntry = parent::get($key);
+        if ($cacheEntry) {
+            return $cacheEntry;
+        }
+
         $cacheFrontend = self::getCacheFrontend();
         $entryIdentifier = self::buildEntryIdentifier($key);
 
-        $firstLevel = parent::get($key);
-
-        // if the LRU cache doesn't contain the item try the remote backend
-        $secondLevel = ($firstLevel === null && $cacheFrontend->has($entryIdentifier))
-            ? $cacheFrontend->get($entryIdentifier)
-            : null;
-
-        return $firstLevel !== null ? $firstLevel : $secondLevel;
+        return $cacheFrontend->get($entryIdentifier);
     }
 
     /**
@@ -93,10 +91,7 @@ class Cache extends Aws\LruArrayCache
 
         parent::remove($key);
 
-        // only issue a remove if the entry is still present
-        if ($cacheFrontend->has($entryIdentifier)) {
-            $cacheFrontend->remove($entryIdentifier);
-        }
+        $cacheFrontend->remove($entryIdentifier);
     }
 
     /**
@@ -115,26 +110,9 @@ class Cache extends Aws\LruArrayCache
      */
     public static function getCacheFrontend()
     {
-        $cacheManager = Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager');
-
-        if (self::$cacheFrontend === null
-            && is_array($GLOBALS['TYPO3_CONF_VARS']) && array_key_exists('SYS', $GLOBALS['TYPO3_CONF_VARS'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']) && array_key_exists('caching', $GLOBALS['TYPO3_CONF_VARS']['SYS'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching'])
-            && array_key_exists('cacheConfigurations', $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations'])
-            && array_key_exists('tx_fal_s3', $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations'])
-            && $cacheManager instanceof Core\Cache\CacheManager
-        ) {
-            $cacheManager->setCacheConfigurations(array(
-                'tx_fal_s3' => $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3']
-            ));
+        if (self::$cacheFrontend === null && !empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3'])) {
+            self::$cacheFrontend = Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('tx_fal_s3');
         }
-
-        if ($cacheManager instanceof Core\Cache\CacheManager && $cacheManager->hasCache('tx_fal_s3')) {
-            self::$cacheFrontend = $cacheManager->getCache('tx_fal_s3');
-        }
-
         return self::$cacheFrontend;
     }
 }

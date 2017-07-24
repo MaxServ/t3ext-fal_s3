@@ -710,6 +710,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      */
     public function getFileForLocalProcessing($fileIdentifier, $writable = true)
     {
+        if (isset($this->temporaryFiles[$fileIdentifier])) {
+            return $this->temporaryFiles[$fileIdentifier];
+        }
+
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
         $temporaryFilePath = $this->getTemporaryPathForFile($fileIdentifier);
         $path = $this->getStreamWrapperPath($fileIdentifier);
@@ -717,7 +721,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
         copy($path, $temporaryFilePath);
 
         if (!$writable) {
-            $this->temporaryFiles[] = $temporaryFilePath;
+            $this->temporaryFiles[$fileIdentifier] = $temporaryFilePath;
         }
 
         return $temporaryFilePath;
@@ -1015,8 +1019,8 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
             'ls'
         );
 
-        if ($cacheFrontend->has($cacheEntryIdentifier)) {
-            return $cacheFrontend->get($cacheEntryIdentifier);
+        if ($folderEntries = $cacheFrontend->get($cacheEntryIdentifier)) {
+            return $folderEntries;
         }
 
         $iteratorMode = \FilesystemIterator::UNIX_PATHS |
