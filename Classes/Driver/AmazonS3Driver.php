@@ -1010,18 +1010,30 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
         $folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
         $path = $this->getStreamWrapperPath($folderIdentifier);
 
-        $cacheEntryIdentifier = Cache::buildEntryIdentifier(
-            $path . '-' . $recursive . '-' . $includeFiles . '-' . $includeDirectories,
-            'ls'
-        );
-
-        if ($folderEntries = $cacheFrontend->get($cacheEntryIdentifier)) {
-            return $folderEntries;
-        }
-
         $iteratorMode = \FilesystemIterator::UNIX_PATHS |
             \FilesystemIterator::SKIP_DOTS |
             \FilesystemIterator::CURRENT_AS_FILEINFO;
+
+        $iterator = new CachedDirectoryIterator(
+            $path,
+            $iteratorMode,
+            $cacheFrontend,
+            function(\SplFileInfo $fileInfo) {
+                $entryIdentifier = $this->stripStreamWrapperPath($fileInfo->getPathname());
+                if ($fileInfo->isDir()) {
+                    $entryIdentifier = $this->canonicalizeAndCheckFolderIdentifier($entryIdentifier);
+                } else {
+                    $entryIdentifier = $this->canonicalizeAndCheckFileIdentifier($entryIdentifier);
+                }
+                return $entryIdentifier;
+            },
+            function(\SplFileInfo $fileInfo) use ($excludedFolders) {
+                return ($fileInfo->getFilename() === '')
+                    || ($fileInfo->isDir() && in_array($fileInfo->getFilename(), $excludedFolders, true));
+            },
+            $includeFiles,
+            $includeDirectories
+        );
 
         if ($recursive) {
             $processingFolder = $this->getProcessingFolder();
@@ -1029,38 +1041,19 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
             $this->configuration['excludedFolders'][] = $processingFolder;
 
             $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($path, $iteratorMode),
+                $iterator,
                 \RecursiveIteratorIterator::SELF_FIRST
             );
-        } else {
-            $iterator = new \RecursiveDirectoryIterator($path, $iteratorMode);
         }
 
         while ($iterator->valid()) {
-            /** @var $entry \SplFileInfo */
             $entry = $iterator->current();
-
-            if ((($entry->isFile() && $includeFiles) || ($entry->isDir() && $includeDirectories && !in_array($entry->getFilename(), $excludedFolders, true))) && $entry->getFilename() !== '') {
-                $entryIdentifier = $this->stripStreamWrapperPath($entry->getPathname());
-
-                if ($entry->isDir()) {
-                    $entryIdentifier = $this->canonicalizeAndCheckFolderIdentifier($entryIdentifier);
-                } else {
-                    $entryIdentifier = $this->canonicalizeAndCheckFileIdentifier($entryIdentifier);
-                }
-
-                $directoryEntries[$entryIdentifier] = $entryIdentifier;
-            }
-
+            $directoryEntries[$entry] = $entry;
             $iterator->next();
         }
 
-        $arrayValues = array_values($directoryEntries);
-
-        $cacheFrontend->set($cacheEntryIdentifier, $arrayValues, array(Cache::buildEntryIdentifier($path, 'd')), 86400);
-
         $this->configuration['excludedFolders'] = $excludedFolders;
-        return $arrayValues;
+        return array_values($directoryEntries);
     }
 
     /**
