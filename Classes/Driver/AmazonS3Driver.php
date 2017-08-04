@@ -107,6 +107,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
                     $this->configuration,
                     $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]
                 );
+                $this->configuration['excludedFolders'] = isset($this->configuration['excludedFolders']) ? $this->configuration['excludedFolders'] : [];
             } else {
                     // throw an InvalidConfigurationException to trigger the storage to mark itself as offline
                 throw new TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException(
@@ -899,16 +900,11 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      */
     public function getFoldersInFolder($folderIdentifier, $start = 0, $numberOfItems = 0, $recursive = false, array $folderNameFilterCallbacks = array(), $sort = '', $sortRev = false)
     {
-        $folderIdentifiers = $this->resolveFolderEntries($folderIdentifier, $recursive, false, true);
         $processingFolder = $this->getProcessingFolder();
-        $processingFolderLength = strlen($processingFolder);
-
-            // remove the _processed_ folder
-        $folderIdentifiers = array_filter($folderIdentifiers, function ($identifier) use ($processingFolder, $processingFolderLength) {
-                // strip the last / and check if the last part of the identifier matches the one for the processing folder
-            return substr(rtrim($identifier, '/'), (-1 * $processingFolderLength)) !== $processingFolder;
-        });
-
+        $excludedFolders = $this->configuration['excludedFolders'];
+        $this->configuration['excludedFolders'][] = $processingFolder;
+        $folderIdentifiers = $this->resolveFolderEntries($folderIdentifier, $recursive, false, true);
+        $this->configuration['excludedFolders'] = $excludedFolders;
         return $folderIdentifiers;
     }
 
@@ -1028,6 +1024,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
             \FilesystemIterator::CURRENT_AS_FILEINFO;
 
         if ($recursive) {
+            $processingFolder = $this->getProcessingFolder();
+            $excludedFolders = $this->configuration['excludedFolders'];
+            $this->configuration['excludedFolders'][] = $processingFolder;
+
             $iterator = new \RecursiveIteratorIterator(
                 new \RecursiveDirectoryIterator($path, $iteratorMode),
                 \RecursiveIteratorIterator::SELF_FIRST
@@ -1059,6 +1059,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
         $cacheFrontend->set($cacheEntryIdentifier, $arrayValues, array(Cache::buildEntryIdentifier($path, 'd')), 86400);
 
+        $this->configuration['excludedFolders'] = $excludedFolders;
         return $arrayValues;
     }
 
