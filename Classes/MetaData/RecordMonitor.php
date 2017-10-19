@@ -72,8 +72,6 @@ class RecordMonitor
 
                     $metaDataRepository->update($file->getUid(), $record);
                 }
-
-                unlink($temporaryFilePath);
             }
         }
     }

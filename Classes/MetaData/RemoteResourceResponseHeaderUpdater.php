@@ -42,6 +42,8 @@ class RemoteResourceResponseHeaderUpdater
 
         if ($file instanceof TYPO3\CMS\Core\Resource\File
             && $file->getStorage()->getDriverType() === FalS3\Driver\AmazonS3Driver::DRIVER_KEY
+            && ($cacheControl = $this->createCacheControlDirectives($file)) !== false
+            && !empty($cacheControl)
         ) {
             $driverConfiguration = $this->getDriverConfiguration($file->getStorage());
 
@@ -60,10 +62,8 @@ class RemoteResourceResponseHeaderUpdater
                     'secret' => $driverConfiguration['secret']
                 )
             ));
-        }
 
-        if ($client instanceof Aws\S3\S3Client) {
-            $this->updateResourceMetadata($client, $file, $bucket);
+            $this->updateResourceMetadata($client, $file, $bucket, $cacheControl);
 
             $processedFileRepository = TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
                 TYPO3\CMS\Core\Resource\ProcessedFileRepository::class
@@ -74,8 +74,8 @@ class RemoteResourceResponseHeaderUpdater
 
                 array_walk(
                     $processedFiles,
-                    function (TYPO3\CMS\Core\Resource\FileInterface $processedFile) use ($client, $bucket) {
-                        $this->updateResourceMetadata($client, $processedFile, $bucket);
+                    function (TYPO3\CMS\Core\Resource\FileInterface $processedFile) use ($client, $bucket, $cacheControl) {
+                        $this->updateResourceMetadata($client, $processedFile, $bucket, $cacheControl);
                     }
                 );
             }
@@ -86,6 +86,7 @@ class RemoteResourceResponseHeaderUpdater
      * @param Aws\S3\S3Client $client
      * @param TYPO3\CMS\Core\Resource\FileInterface $file
      * @param string $bucket
+     * @param string $cacheControl
      * @param array $metadata
      *
      * @return void
@@ -94,6 +95,7 @@ class RemoteResourceResponseHeaderUpdater
         Aws\S3\S3Client $client,
         TYPO3\CMS\Core\Resource\FileInterface $file,
         $bucket,
+        $cacheControl,
         array $metadata = array()
     ) {
         $key = ltrim($file->getIdentifier(), '/');
@@ -115,7 +117,7 @@ class RemoteResourceResponseHeaderUpdater
 
         $client->copyObject(array(
             'Bucket' => $bucket,
-            'CacheControl' => 'max-age=30',
+            'CacheControl' => $cacheControl,
             'ContentType' => $currentResource->get('ContentType'),
             'CopySource' => $bucket . '/' . $key,
             'Key' => $key,
@@ -139,5 +141,89 @@ class RemoteResourceResponseHeaderUpdater
         }
 
         return $driverConfiguration;
+    }
+
+    /**
+     * @param TYPO3\CMS\Core\Resource\File $file
+     *
+     * @return string
+     */
+    protected function createCacheControlDirectives(TYPO3\CMS\Core\Resource\File $file)
+    {
+        $cacheControl = array();
+        $driverConfiguration = $this->getDriverConfiguration($file->getStorage());
+
+        if (array_key_exists('cacheControl', $driverConfiguration)
+            && is_array($driverConfiguration['cacheControl'])
+        ) {
+            switch ($file->getType()) {
+                case TYPO3\CMS\Core\Resource\AbstractFile::FILETYPE_UNKNOWN:
+                    $directives = (array_key_exists('text', $driverConfiguration['cacheControl'])
+                        && is_array($driverConfiguration['cacheControl']['unknown']))
+                        ? $driverConfiguration['cacheControl']['unknown']
+                        : null;
+                    break;
+                case TYPO3\CMS\Core\Resource\AbstractFile::FILETYPE_TEXT:
+                    $directives = (array_key_exists('text', $driverConfiguration['cacheControl'])
+                        && is_array($driverConfiguration['cacheControl']['text']))
+                        ? $driverConfiguration['cacheControl']['text']
+                        : null;
+                    break;
+                case TYPO3\CMS\Core\Resource\AbstractFile::FILETYPE_IMAGE:
+                    $directives = (array_key_exists('text', $driverConfiguration['cacheControl'])
+                        && is_array($driverConfiguration['cacheControl']['image']))
+                        ? $driverConfiguration['cacheControl']['image']
+                        : null;
+                    break;
+                case TYPO3\CMS\Core\Resource\AbstractFile::FILETYPE_AUDIO:
+                    $directives = (array_key_exists('text', $driverConfiguration['cacheControl'])
+                        && is_array($driverConfiguration['cacheControl']['audio']))
+                        ? $driverConfiguration['cacheControl']['audio']
+                        : null;
+                    break;
+                case TYPO3\CMS\Core\Resource\AbstractFile::FILETYPE_VIDEO:
+                    $directives = (array_key_exists('text', $driverConfiguration['cacheControl'])
+                        && is_array($driverConfiguration['cacheControl']['video']))
+                        ? $driverConfiguration['cacheControl']['video']
+                        : null;
+                    break;
+                case TYPO3\CMS\Core\Resource\AbstractFile::FILETYPE_APPLICATION:
+                    $directives = (array_key_exists('text', $driverConfiguration['cacheControl'])
+                        && is_array($driverConfiguration['cacheControl']['application']))
+                        ? $driverConfiguration['cacheControl']['application']
+                        : null;
+                    break;
+                default:
+                    $directives = null;
+                    break;
+            }
+
+            // if access is enforce trough FAL ensure that the resource isn't cached by intermediate proxies
+            $isPrivate = ($file->hasProperty('fe_groups') && !empty($file->getProperty('fe_groups')));
+
+            if (is_array($directives)
+                && ((array_key_exists('private', $directives)
+                        && $directives['private']) || $isPrivate)
+            ) {
+                $cacheControl[] = 'private';
+            }
+
+            if (is_array($directives)
+                && array_key_exists('max-age', $directives)
+                && $directives['max-age'] > 0
+            ) {
+                $cacheControl[] = 'max-age=' . (int) $directives['max-age'];
+            }
+
+            // if a no-store directive is set ignore earlier parts
+            if (is_array($directives)
+                && array_key_exists('no-store', $directives)
+                && $directives['no-store']
+            ) {
+                $cacheControl = array('no-store');
+            }
+        }
+
+        return implode(', ', $cacheControl);
     }
 }
