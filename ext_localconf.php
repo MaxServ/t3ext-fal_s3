@@ -46,6 +46,20 @@ $signalSlotDispatcher->connect(
     'recordUpdatedOrCreated'
 );
 
+$signalSlotDispatcher->connect(
+    'TYPO3\\CMS\\Core\\Resource\\Index\\MetaDataRepository',
+    'recordUpdated',
+    'MaxServ\\FalS3\\MetaData\\RemoteResourceResponseHeaderUpdater',
+    'recordUpdatedOrCreated'
+);
+
+$signalSlotDispatcher->connect(
+    'TYPO3\\CMS\\Core\\Resource\\Index\\MetaDataRepository',
+    'recordCreated',
+    'MaxServ\\FalS3\\MetaData\\RemoteResourceResponseHeaderUpdater',
+    'recordUpdatedOrCreated'
+);
+
 $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['deployer']['configuration']['FalS3.yaml'] = array(
     'converter' => 'MaxServ\\FalS3\\Configuration\\ConfigurationConverter',
     'definition' => 'MaxServ\\FalS3\\Configuration\\ConfigurationDefinition',
