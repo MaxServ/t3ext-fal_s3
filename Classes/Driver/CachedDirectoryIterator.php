@@ -94,10 +94,10 @@ class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
             $iterator = new \RecursiveDirectoryIterator($this->path, $this->iteratorMode);
             /** @var \SplFileInfo $fileOrFolder */
             foreach ($iterator as $fileOrFolder) {
-                if (($this->filter)($fileOrFolder)) {
+                if (call_user_func($this->filter, $fileOrFolder)) {
                     continue;
                 }
-                $this->filesAndFolders[] = ($this->normalizer)($fileOrFolder);
+                $this->filesAndFolders[] = call_user_func($this->normalizer, $fileOrFolder);
             }
             $cacheTags = [Cache::buildEntryIdentifier($this->path, 'd')];
             $this->cache->set($cacheEntryIdentifier, $this->filesAndFolders, $cacheTags, 0);
