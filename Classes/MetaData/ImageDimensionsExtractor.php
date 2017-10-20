@@ -118,8 +118,6 @@ class ImageDimensionsExtractor implements TYPO3\CMS\Core\Resource\Index\Extracto
                 $previousExtractedData['width'] = $imageDimensions[0];
                 $previousExtractedData['height'] = $imageDimensions[1];
             }
-
-            unlink($temporaryFilePath);
         }
 
         return $previousExtractedData;

@@ -23,7 +23,19 @@ $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations']['offli
     'title' => 'Dummy S3 configuration (offline)',
     'publicBaseUrl' => '',
     'defaultFolder' => 'user_upload',
-    'basePath' => '/assets/'
+    'basePath' => '/assets/',
+    'cacheControl' => array(
+        'text' => array(
+            'max-age' => 300,
+            'private' => true
+        ),
+        'image' => array(
+            'max-age' => 86400
+        ),
+        'application' => array(
+            'no-store' => true
+        )
+    )
 );
 
 \TYPO3\CMS\Core\Resource\Index\ExtractorRegistry::getInstance()->registerExtractionService(
@@ -43,6 +55,20 @@ $signalSlotDispatcher->connect(
     'TYPO3\\CMS\\Core\\Resource\\Index\\FileIndexRepository',
     'recordCreated',
     'MaxServ\\FalS3\\MetaData\\RecordMonitor',
+    'recordUpdatedOrCreated'
+);
+
+$signalSlotDispatcher->connect(
+    'TYPO3\\CMS\\Core\\Resource\\Index\\MetaDataRepository',
+    'recordUpdated',
+    'MaxServ\\FalS3\\MetaData\\RemoteResourceResponseHeaderUpdater',
+    'recordUpdatedOrCreated'
+);
+
+$signalSlotDispatcher->connect(
+    'TYPO3\\CMS\\Core\\Resource\\Index\\MetaDataRepository',
+    'recordCreated',
+    'MaxServ\\FalS3\\MetaData\\RemoteResourceResponseHeaderUpdater',
     'recordUpdatedOrCreated'
 );
 
