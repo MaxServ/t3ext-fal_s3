@@ -385,7 +385,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
         copy($localFilePath, $targetFilePath);
 
         if ($removeOriginal) {
-            unlink($localFilePath);
+            $this->temporaryFiles[$targetFileIdentifier] = $localFilePath;
         }
 
         $this->flushCacheEntriesForFolder($targetFolderIdentifier);
@@ -492,6 +492,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
         $this->flushCacheEntriesForFolder(dirname($fileIdentifier));
 
+        $this->temporaryFiles[$fileIdentifier] = $localFilePath;
         return copy($localFilePath, $filePath);
     }
 
