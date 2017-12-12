@@ -49,6 +49,20 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
     protected $temporaryFiles = array();
 
     /**
+     * Simple runtime cache to prevent numerous calls to S3 or the Caching Framework
+     *
+     * @var array
+     */
+    protected $fileExistsCache = array();
+
+    /**
+     * Simple runtime cache to prevent numerous calls to S3 or the Caching Framework
+     *
+     * @var array
+     */
+    protected $folderExistsCache = array();
+
+    /**
      * Initialize this driver and expose the capabilities for the repository to use
      *
      * @param array $configuration
@@ -334,9 +348,16 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
     {
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
 
-        $path = $this->getStreamWrapperPath($fileIdentifier);
+        $path = rtrim(
+            $this->getStreamWrapperPath($fileIdentifier),
+            '/'
+        );
 
-        return is_file(rtrim($path, '/'));
+        if (!array_key_exists($path, $this->fileExistsCache)) {
+            $this->fileExistsCache[$path] = is_file($path);
+        }
+
+        return $this->fileExistsCache[$path];
     }
 
     /**
@@ -349,9 +370,16 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
     {
         $folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
 
-        $path = $this->getStreamWrapperPath($folderIdentifier);
+        $path = rtrim(
+            $this->getStreamWrapperPath($folderIdentifier),
+            '/'
+        );
 
-        return is_dir(rtrim($path, '/'));
+        if (!array_key_exists($path, $this->folderExistsCache)) {
+            $this->folderExistsCache[$path] = is_dir($path);
+        }
+
+        return $this->folderExistsCache[$path];
     }
 
     /**
