@@ -46,6 +46,13 @@ $signalSlotDispatcher->connect(
     'recordUpdatedOrCreated'
 );
 
+$signalSlotDispatcher->connect(
+    'TYPO3\\CMS\\Core\\Resource\\ResourceStorage',
+    'preFileProcess',
+    'MaxServ\\FalS3\\Processing\\ImagePreviewConfiguration',
+    'onPreFileProcess'
+);
+
 $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['deployer']['configuration']['FalS3.yaml'] = array(
     'converter' => 'MaxServ\\FalS3\\Configuration\\ConfigurationConverter',
     'definition' => 'MaxServ\\FalS3\\Configuration\\ConfigurationDefinition',
