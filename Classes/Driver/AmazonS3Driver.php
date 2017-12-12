@@ -1070,9 +1070,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
             function(\SplFileInfo $fileInfo) use ($excludedFolders) {
                 return ($fileInfo->getFilename() === '')
                     || ($fileInfo->isDir() && in_array($fileInfo->getFilename(), $excludedFolders, true));
-            },
-            $includeFiles,
-            $includeDirectories
+            }
         );
 
         if ($recursive) {
@@ -1089,6 +1087,13 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
         while ($iterator->valid()) {
             $entry = $iterator->current();
             $directoryEntries[$entry] = $entry;
+            $isDirectory = substr($entry, -1) === '/';
+            if ($isDirectory && !$includeDirectories) {
+                unset($directoryEntries[$entry]);
+            }
+            if (!$isDirectory && !$includeFiles) {
+                unset($directoryEntries[$entry]);
+            }
             $iterator->next();
         }
 

@@ -39,16 +39,6 @@ class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
     private $normalizer;
 
     /**
-     * @var bool
-     */
-    private $includeFiles;
-
-    /**
-     * @var bool
-     */
-    private $includeDirectories;
-
-    /**
      * @var callable
      */
     private $filter;
@@ -68,17 +58,13 @@ class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
         $iteratorMode,
         FrontendInterface $cache,
         callable $normalizer,
-        callable $filter,
-        $includeFiles = true,
-        $includeDirectories = true
+        callable $filter
     ) {
         $this->path = $path;
         $this->iteratorMode = $iteratorMode;
         $this->cache = $cache;
         $this->normalizer = $normalizer;
         $this->filter = $filter;
-        $this->includeFiles = $includeFiles;
-        $this->includeDirectories = $includeDirectories;
         $this->initialize();
     }
 
@@ -102,15 +88,6 @@ class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
             $cacheTags = [Cache::buildEntryIdentifier($this->path, 'd')];
             $this->cache->set($cacheEntryIdentifier, $this->filesAndFolders, $cacheTags, 0);
         }
-        $this->filesAndFolders = $this->getFileOrFoldersFromCacheEntry($this->filesAndFolders, $this->includeFiles, $this->includeDirectories);
-    }
-
-    private function getFileOrFoldersFromCacheEntry(array $cacheEntries, $includeFiles = true, $includeDirectories = true)
-    {
-        return array_values(array_filter($cacheEntries, function($identifier) use ($includeFiles, $includeDirectories) {
-            $isDirectory = substr($identifier, -1) === '/';
-            return ($isDirectory && $includeDirectories) || (!$isDirectory && $includeFiles);
-        }));
     }
 
     public function seek($position)
@@ -140,7 +117,7 @@ class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
 
     public function getChildren()
     {
-        return new self($this->path . basename($this->filesAndFolders[$this->currentIndex]) . '/', $this->iteratorMode, $this->cache, $this->normalizer, $this->filter, $this->includeFiles, $this->includeDirectories);
+        return new self($this->path . basename($this->filesAndFolders[$this->currentIndex]) . '/', $this->iteratorMode, $this->cache, $this->normalizer, $this->filter);
     }
 
     public function key()
