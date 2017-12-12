@@ -869,7 +869,11 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      */
     public function getFilesInFolder($folderIdentifier, $start = 0, $numberOfItems = 0, $recursive = false, array $filenameFilterCallbacks = array(), $sort = '', $sortRev = false)
     {
-        return $this->resolveFolderEntries($folderIdentifier, $recursive, true, false);
+        return array_slice(
+            $this->resolveFolderEntries($folderIdentifier, $recursive, true, false),
+            $start,
+            ($numberOfItems > 0 ? $numberOfItems : null)
+        );
     }
 
     /**
@@ -905,7 +909,13 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
         $processingFolder = $this->getProcessingFolder();
         $excludedFolders = $this->configuration['excludedFolders'];
         $this->configuration['excludedFolders'][] = $processingFolder;
-        $folderIdentifiers = $this->resolveFolderEntries($folderIdentifier, $recursive, false, true);
+
+        $folderIdentifiers = array_slice(
+            $this->resolveFolderEntries($folderIdentifier, $recursive, false, true),
+            $start,
+            ($numberOfItems > 0 ? $numberOfItems : null)
+        );
+
         $this->configuration['excludedFolders'] = $excludedFolders;
         return $folderIdentifiers;
     }
