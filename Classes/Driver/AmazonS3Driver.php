@@ -910,8 +910,14 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      */
     public function getFilesInFolder($folderIdentifier, $start = 0, $numberOfItems = 0, $recursive = false, array $filenameFilterCallbacks = array(), $sort = '', $sortRev = false)
     {
+        $folderEntries = $this->resolveFolderEntries($folderIdentifier, $recursive, true, false);
+
+        if (!$recursive) {
+            $folderEntries = $this->sortFolderEntries($folderEntries, $sort, $sortRev);
+        }
+
         return array_slice(
-            $this->resolveFolderEntries($folderIdentifier, $recursive, true, false),
+            $folderEntries,
             $start,
             ($numberOfItems > 0 ? $numberOfItems : null)
         );
@@ -951,8 +957,14 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
         $excludedFolders = $this->configuration['excludedFolders'];
         $this->configuration['excludedFolders'][] = $processingFolder;
 
+        $folderEntries = $this->resolveFolderEntries($folderIdentifier, $recursive, false, true);
+
+        if (!$recursive) {
+            $folderEntries = $this->sortFolderEntries($folderEntries);
+        }
+
         $folderIdentifiers = array_slice(
-            $this->resolveFolderEntries($folderIdentifier, $recursive, false, true),
+            $folderEntries,
             $start,
             ($numberOfItems > 0 ? $numberOfItems : null)
         );
@@ -1112,6 +1124,65 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
         $this->configuration['excludedFolders'] = $excludedFolders;
         return array_values($directoryEntries);
+    }
+
+    /**
+     * Sort the directory entries by a certain key
+     *
+     * @param array $folderEntries
+     * @param string $method
+     * @param bool $reverse
+     * @return array
+     */
+    protected function sortFolderEntries($folderEntries, $method = '', $reverse = false)
+    {
+        $sortableEntries = array();
+
+        foreach ($folderEntries as $key => $identifier) {
+            $sortingKey = null;
+
+            if ($method === 'fileext') {
+                $sortingKey = pathinfo($identifier, PATHINFO_EXTENSION);
+            }
+
+            if ($method == 'rw') {
+                // should be checked with the storage rather than the driver,
+                // the underlying might allow more than a user in TYPO3
+                $permissions = $this->getPermissions($identifier);
+
+                $sortingKey = '';
+                $sortingKey .= ($permissions['r'] ? 'R' : '');
+                $sortingKey .= ($permissions['w'] ? 'W' : '');
+            }
+
+            if ($method === 'size') {
+                $sortingKey = filesize($this->getStreamWrapperPath($identifier));
+            }
+
+            if ($method === 'tstamp') {
+                $sortingKey = filemtime($this->getStreamWrapperPath($identifier));
+            }
+
+            if ($sortingKey !== null) {
+                // make sure the key is unique even if two files have the exact same mtime or size
+                $sortableEntries[$sortingKey . $key] = $identifier;
+            }
+        }
+
+        // if sorting should be performed by name use the native PHP natcasesort() method
+        if (!empty($sortableEntries)) {
+            uksort($sortableEntries, 'strnatcasecmp');
+
+            $folderEntries = $sortableEntries;
+        } else {
+            natcasesort($folderEntries);
+        }
+
+        if ($reverse) {
+            $folderEntries = array_reverse($folderEntries);
+        }
+
+        return $folderEntries;
     }
 
     /**
