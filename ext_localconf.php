@@ -26,10 +26,6 @@ $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations']['offli
     'basePath' => '/assets/'
 );
 
-\TYPO3\CMS\Core\Resource\Index\ExtractorRegistry::getInstance()->registerExtractionService(
-    'MaxServ\\FalS3\\MetaData\\ImageDimensionsExtractor'
-);
-
 /* @var $signalSlotDispatcher \TYPO3\CMS\Extbase\SignalSlot\Dispatcher */
 $signalSlotDispatcher = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Extbase\SignalSlot\Dispatcher');
 $signalSlotDispatcher->connect(
@@ -65,3 +61,4 @@ if (!isset($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations'][
         'system'
     );
 }
+unset($driverRegistry, $signalSlotDispatcher);

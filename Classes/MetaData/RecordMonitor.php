@@ -14,12 +14,12 @@ namespace MaxServ\FalS3\MetaData;
  * The TYPO3 project - inspiring people to share!
  */
 
-use MaxServ\FalS3;
-use TYPO3;
+use MaxServ\FalS3\Driver\AmazonS3Driver;
+use TYPO3\CMS\Core\Resource\AbstractFile;
+use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Class RecordMonitor
- *
  * @package MaxServ\FalS3\MetaData
  */
 class RecordMonitor
@@ -34,47 +34,20 @@ class RecordMonitor
      */
     public function recordUpdatedOrCreated(array $data)
     {
-        $metaDataRepository = null;
-        $storage = null;
-
-        if ($data['type'] === TYPO3\CMS\Core\Resource\File::FILETYPE_IMAGE) {
-            /* @var $storage \TYPO3\CMS\Core\Resource\ResourceStorage */
-            $storage = TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->getStorageObject($data['storage']);
-
-            if ($storage->getDriverType() === FalS3\Driver\AmazonS3Driver::DRIVER_KEY) {
-                $storage->setEvaluatePermissions(false);
-
-                $metaDataRepository = TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-                    'TYPO3\\CMS\\Core\\Resource\\Index\\MetaDataRepository'
-                );
-            }
+        if ((int)$data['type'] !== AbstractFile::FILETYPE_IMAGE) {
+            return;
         }
-
-        if ($metaDataRepository instanceof TYPO3\CMS\Core\Resource\Index\MetaDataRepository) {
-            $file = $storage->getFile($data['identifier']);
-            $record = $metaDataRepository->findByFileUid($data['uid']);
-
-                // directly after creation of a file the dimensions are not set,
-                // but must be added for the system to function properly
-            if (is_array($record) && !array_key_exists('width', $record) && $file instanceof TYPO3\CMS\Core\Resource\File) {
-                /* @var $graphicalFunctionsObject \TYPO3\CMS\Core\Imaging\GraphicalFunctions */
-                $graphicalFunctionsObject = TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-                    'TYPO3\\CMS\\Core\\Imaging\\GraphicalFunctions'
-                );
-
-                $temporaryFilePath = $file->getForLocalProcessing(false);
-
-                $imageDimensions = $graphicalFunctionsObject->getImageDimensions($temporaryFilePath);
-
-                if (is_array($imageDimensions) && array_key_exists(0, $imageDimensions) && array_key_exists(1, $imageDimensions)) {
-                    $record['width'] = $imageDimensions[0];
-                    $record['height'] = $imageDimensions[1];
-
-                    $metaDataRepository->update($file->getUid(), $record);
-                }
-
-                unlink($temporaryFilePath);
-            }
+        $file = ResourceFactory::getInstance()->getFileObject($data['uid'], $data);
+        if ($file->getStorage()->getDriverType() !== AmazonS3Driver::DRIVER_KEY) {
+            return;
         }
+        $temporaryFilePath = $file->getForLocalProcessing(false);
+        $metaDataRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Index\\MetaDataRepository');
+        $imageInfo = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Type\\File\\ImageInfo', $temporaryFilePath);
+        $additionalMetaInformation = [
+            'width' => $imageInfo->getWidth(),
+            'height' => $imageInfo->getHeight(),
+        ];
+        $metaDataRepository->update($file->getUid(), $additionalMetaInformation);
     }
 }
