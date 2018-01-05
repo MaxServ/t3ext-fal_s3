@@ -1083,7 +1083,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
             $path,
             $iteratorMode,
             $cacheFrontend,
-            function(\SplFileInfo $fileInfo) {
+            function (\SplFileInfo $fileInfo) {
                 $entryIdentifier = $this->stripStreamWrapperPath($fileInfo->getPathname());
                 if ($fileInfo->isDir()) {
                     $entryIdentifier = $this->canonicalizeAndCheckFolderIdentifier($entryIdentifier);
@@ -1092,7 +1092,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
                 }
                 return $entryIdentifier;
             },
-            function(\SplFileInfo $fileInfo) use ($excludedFolders) {
+            function (\SplFileInfo $fileInfo) use ($excludedFolders) {
                 return ($fileInfo->getFilename() === '')
                     || ($fileInfo->isDir() && in_array($fileInfo->getFilename(), $excludedFolders, true));
             }
