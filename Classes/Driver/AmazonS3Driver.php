@@ -1136,46 +1136,38 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      */
     protected function sortFolderEntries($folderEntries, $method = '', $reverse = false)
     {
-        $sortableEntries = array();
+        switch ($method) {
+            case 'fileext':
+                usort($folderEntries, function($a, $b) {
+                    return (strtolower(pathinfo($a, PATHINFO_EXTENSION)) > strtolower(pathinfo($b, PATHINFO_EXTENSION))) ? +1 : -1;
+                });
+                break;
+            case 'rw':
+                usort($folderEntries, function($a, $b) {
+                    $getPermissionsA = $this->getPermissions($a);
+                    $getPermissionsB = $this->getPermissions($b);
 
-        foreach ($folderEntries as $key => $identifier) {
-            $sortingKey = null;
+                    $permissionsA = ($getPermissionsA['r'] ? 'R' : '') . ($getPermissionsA['w'] ? 'W' : '');
+                    $permissionsB = ($getPermissionsB['r'] ? 'R' : '') . ($getPermissionsB['w'] ? 'W' : '');
 
-            if ($method === 'fileext') {
-                $sortingKey = pathinfo($identifier, PATHINFO_EXTENSION);
-            }
-
-            if ($method == 'rw') {
-                // should be checked with the storage rather than the driver,
-                // the underlying might allow more than a user in TYPO3
-                $permissions = $this->getPermissions($identifier);
-
-                $sortingKey = '';
-                $sortingKey .= ($permissions['r'] ? 'R' : '');
-                $sortingKey .= ($permissions['w'] ? 'W' : '');
-            }
-
-            if ($method === 'size') {
-                $sortingKey = filesize($this->getStreamWrapperPath($identifier));
-            }
-
-            if ($method === 'tstamp') {
-                $sortingKey = filemtime($this->getStreamWrapperPath($identifier));
-            }
-
-            if ($sortingKey !== null) {
-                // make sure the key is unique even if two files have the exact same mtime or size
-                $sortableEntries[$sortingKey . $key] = $identifier;
-            }
-        }
-
-        // if sorting should be performed by name use the native PHP natcasesort() method
-        if (!empty($sortableEntries)) {
-            uksort($sortableEntries, 'strnatcasecmp');
-
-            $folderEntries = $sortableEntries;
-        } else {
-            natcasesort($folderEntries);
+                    return ($permissionsA > $permissionsB) ? +1 : -1;
+                });
+                break;
+            case 'size':
+                usort($folderEntries, function($a, $b) {
+                    return (filesize($this->getStreamWrapperPath($a)) > filesize($this->getStreamWrapperPath($b))) ? +1 : -1;
+                });
+                break;
+            case 'tstamp':
+                usort($folderEntries, function($a, $b) {
+                    return (filemtime($this->getStreamWrapperPath($a)) > filemtime($this->getStreamWrapperPath($b))) ? +1 : -1;
+                });
+                break;
+            case '_REF_':
+                break;
+            default:
+                natcasesort($folderEntries);
+                break;
         }
 
         if ($reverse) {
