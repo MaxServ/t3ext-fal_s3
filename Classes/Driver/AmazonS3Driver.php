@@ -1136,38 +1136,45 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      */
     protected function sortFolderEntries($folderEntries, $method = '', $reverse = false)
     {
-        switch ($method) {
-            case 'fileext':
-                usort($folderEntries, function($a, $b) {
-                    return (strtolower(pathinfo($a, PATHINFO_EXTENSION)) > strtolower(pathinfo($b, PATHINFO_EXTENSION))) ? +1 : -1;
-                });
-                break;
-            case 'rw':
-                usort($folderEntries, function($a, $b) {
-                    $getPermissionsA = $this->getPermissions($a);
-                    $getPermissionsB = $this->getPermissions($b);
+        $sortableEntries = array();
 
-                    $permissionsA = ($getPermissionsA['r'] ? 'R' : '') . ($getPermissionsA['w'] ? 'W' : '');
-                    $permissionsB = ($getPermissionsB['r'] ? 'R' : '') . ($getPermissionsB['w'] ? 'W' : '');
+        foreach ($folderEntries as $key => $identifier) {
+            $sortingValue = null;
 
-                    return ($permissionsA > $permissionsB) ? +1 : -1;
-                });
-                break;
-            case 'size':
-                usort($folderEntries, function($a, $b) {
-                    return (filesize($this->getStreamWrapperPath($a)) > filesize($this->getStreamWrapperPath($b))) ? +1 : -1;
-                });
-                break;
-            case 'tstamp':
-                usort($folderEntries, function($a, $b) {
-                    return (filemtime($this->getStreamWrapperPath($a)) > filemtime($this->getStreamWrapperPath($b))) ? +1 : -1;
-                });
-                break;
-            case '_REF_':
-                break;
-            default:
-                natcasesort($folderEntries);
-                break;
+            if ($method === 'fileext') {
+                $sortingValue = pathinfo($identifier, PATHINFO_EXTENSION);
+            }
+
+            if ($method === 'rw') {
+                // should be checked with the storage rather than the driver,
+                // the underlying might allow more than a user in TYPO3
+                $permissions = $this->getPermissions($identifier);
+
+                $sortingValue = '';
+                $sortingValue .= ($permissions['r'] ? 'R' : '');
+                $sortingValue .= ($permissions['w'] ? 'W' : '');
+            }
+
+            if ($method === 'size') {
+                $sortingValue = filesize($this->getStreamWrapperPath($identifier));
+            }
+
+            if ($method === 'tstamp') {
+                $sortingValue = filemtime($this->getStreamWrapperPath($identifier));
+            }
+
+            if ($sortingValue !== null) {
+                $sortableEntries[$identifier] = $sortingValue;
+            }
+        }
+
+        // if sorting should be performed by name use the native PHP natcasesort() method
+        if (!empty($sortableEntries)) {
+            natcasesort($sortableEntries);
+            $sortableEntries = array_keys($sortableEntries);
+            $folderEntries = $sortableEntries;
+        } else {
+            natcasesort($folderEntries);
         }
 
         if ($reverse) {

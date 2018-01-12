@@ -55,10 +55,6 @@ $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['deployer']['configuration']['FalS3.yaml'
     'loader' => 'MaxServ\\FalS3\\Configuration\\ConfigurationLoader'
 );
 
-$GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][\TYPO3\CMS\Core\Resource\File::class] = [
-    'className' => \MaxServ\FalS3\Resource\File::class
-];
-
 // Register cache 'tx_fal_s3'
 if (!isset($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3']['groups'])) {
     $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3']['groups'] = array(
