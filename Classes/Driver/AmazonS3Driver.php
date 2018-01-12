@@ -1139,40 +1139,39 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
         $sortableEntries = array();
 
         foreach ($folderEntries as $key => $identifier) {
-            $sortingKey = null;
+            $sortingValue = null;
 
             if ($method === 'fileext') {
-                $sortingKey = pathinfo($identifier, PATHINFO_EXTENSION);
+                $sortingValue = pathinfo($identifier, PATHINFO_EXTENSION);
             }
 
-            if ($method == 'rw') {
+            if ($method === 'rw') {
                 // should be checked with the storage rather than the driver,
                 // the underlying might allow more than a user in TYPO3
                 $permissions = $this->getPermissions($identifier);
 
-                $sortingKey = '';
-                $sortingKey .= ($permissions['r'] ? 'R' : '');
-                $sortingKey .= ($permissions['w'] ? 'W' : '');
+                $sortingValue = '';
+                $sortingValue .= ($permissions['r'] ? 'R' : '');
+                $sortingValue .= ($permissions['w'] ? 'W' : '');
             }
 
             if ($method === 'size') {
-                $sortingKey = filesize($this->getStreamWrapperPath($identifier));
+                $sortingValue = filesize($this->getStreamWrapperPath($identifier));
             }
 
             if ($method === 'tstamp') {
-                $sortingKey = filemtime($this->getStreamWrapperPath($identifier));
+                $sortingValue = filemtime($this->getStreamWrapperPath($identifier));
             }
 
-            if ($sortingKey !== null) {
-                // make sure the key is unique even if two files have the exact same mtime or size
-                $sortableEntries[$sortingKey . $key] = $identifier;
+            if ($sortingValue !== null) {
+                $sortableEntries[$identifier] = $sortingValue;
             }
         }
 
         // if sorting should be performed by name use the native PHP natcasesort() method
         if (!empty($sortableEntries)) {
-            uksort($sortableEntries, 'strnatcasecmp');
-
+            natcasesort($sortableEntries);
+            $sortableEntries = array_keys($sortableEntries);
             $folderEntries = $sortableEntries;
         } else {
             natcasesort($folderEntries);
