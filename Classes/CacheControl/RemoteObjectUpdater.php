@@ -117,10 +117,14 @@ class RemoteObjectUpdater
             && array_key_exists('bucket', $driverConfiguration)
             && $client instanceof Aws\S3\S3Client
         ) {
-            $currentResource = $client->headObject(array(
-                'Bucket' => $driverConfiguration['bucket'],
-                'Key' => $key
-            ));
+            try {
+              $currentResource = $client->headObject(array(
+                  'Bucket' => $driverConfiguration['bucket'],
+                  'Key' => $key
+              ));
+            } catch (\Exception $e) {
+              // fail silently if a file doesn't exist
+            }
         }
 
         if ($file instanceof Core\Resource\ProcessedFile) {
