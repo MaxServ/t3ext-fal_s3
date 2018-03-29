@@ -111,7 +111,14 @@ class RemoteObjectUpdater
 
         $client = FalS3\Utility\RemoteObjectUtility::resolveClientForStorage($file->getStorage());
         $driverConfiguration = FalS3\Utility\RemoteObjectUtility::resolveDriverConfigurationForStorage($file->getStorage());
-        $key = ltrim($file->getIdentifier(), '/');
+
+        $key = '';
+
+        if (array_key_exists('basePath', $driverConfiguration) && !empty($driverConfiguration['basePath'])){
+          $key .= trim($driverConfiguration['basePath'], '/') . '/';
+        }
+
+        $key .= ltrim($file->getIdentifier(), '/');
 
         if (is_array($driverConfiguration)
             && array_key_exists('bucket', $driverConfiguration)
