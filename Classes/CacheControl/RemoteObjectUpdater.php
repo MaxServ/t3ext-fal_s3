@@ -62,7 +62,6 @@ class RemoteObjectUpdater
                     }
                 );
             }
-
         }
     }
 
@@ -114,8 +113,8 @@ class RemoteObjectUpdater
 
         $key = '';
 
-        if (array_key_exists('basePath', $driverConfiguration) && !empty($driverConfiguration['basePath'])){
-          $key .= trim($driverConfiguration['basePath'], '/') . '/';
+        if (array_key_exists('basePath', $driverConfiguration) && !empty($driverConfiguration['basePath'])) {
+            $key .= trim($driverConfiguration['basePath'], '/') . '/';
         }
 
         $key .= ltrim($file->getIdentifier(), '/');
@@ -125,10 +124,10 @@ class RemoteObjectUpdater
             && $client instanceof Aws\S3\S3Client
         ) {
             try {
-              $currentResource = $client->headObject(array(
+                $currentResource = $client->headObject(array(
                   'Bucket' => $driverConfiguration['bucket'],
                   'Key' => $key
-              ));
+                ));
             } catch (\Exception $e) {
               // fail silently if a file doesn't exist
             }
