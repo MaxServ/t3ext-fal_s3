@@ -141,5 +141,4 @@ class RemoteObjectUtility
 
         return implode(', ', $cacheControl);
     }
-
 }
