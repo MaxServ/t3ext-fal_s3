@@ -113,13 +113,9 @@ class RemoteObjectUtility
             $directives = $driverConfiguration['cacheControl'][$configurationKey];
         }
 
-
-        // if access is enforced trough FAL ensure that the resource isn't cached by intermediate proxies
-        $isPrivate = ($file->hasProperty('fe_groups') && !empty($file->getProperty('fe_groups')));
-
         if (is_array($directives)
             && ((array_key_exists('private', $directives)
-                    && $directives['private']) || $isPrivate)
+                    && $directives['private']))
         ) {
             $cacheControl[] = 'private';
         }
