@@ -29,7 +29,7 @@ class RemoteObjectUpdater
      *
      * @param array $data
      *
-     * @return void
+     * @return array Array of passed arguments, single item in it wich is unmodified $data
      */
     public function onLocalMetadataRecordUpdatedOrCreated(array $data)
     {
@@ -63,6 +63,8 @@ class RemoteObjectUpdater
                 );
             }
         }
+        
+        return [$data];
     }
 
     /**
