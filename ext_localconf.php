@@ -64,6 +64,20 @@ $signalSlotDispatcher->connect(
 );
 
 $signalSlotDispatcher->connect(
+    'TYPO3\\CMS\\Core\\Resource\\Index\\MetaDataRepository',
+    'recordUpdated',
+    'MaxServ\\FalS3\\MetaData\\RecordMonitor',
+    'recordUpdatedOrCreated'
+);
+
+$signalSlotDispatcher->connect(
+    'TYPO3\\CMS\\Core\\Resource\\Index\\MetaDataRepository',
+    'recordCreated',
+    'MaxServ\\FalS3\\MetaData\\RecordMonitor',
+    'recordUpdatedOrCreated'
+);
+
+$signalSlotDispatcher->connect(
     'TYPO3\\CMS\\Core\\Resource\\ResourceStorage',
     'preFileProcess',
     'MaxServ\\FalS3\\Processing\\ImagePreviewConfiguration',
