@@ -904,13 +904,13 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param int $start
      * @param int $numberOfItems
      * @param bool $recursive
+     * @param array $filenameFilterCallbacks callbacks for filtering the items
      * @param string $sort Property name used to sort the items.
      *                     Among them may be: '' (empty, no sorting), name,
      *                     fileext, size, tstamp and rw.
      *                     If a driver does not support the given property, it
      *                     should fall back to "name".
      * @param bool $sortRev TRUE to indicate reverse sorting (last to first)
-     * @param array $filenameFilterCallbacks callbacks for filtering the items
      * @return array of FileIdentifiers
      */
     public function getFilesInFolder($folderIdentifier, $start = 0, $numberOfItems = 0, $recursive = false, array $filenameFilterCallbacks = array(), $sort = '', $sortRev = false)
