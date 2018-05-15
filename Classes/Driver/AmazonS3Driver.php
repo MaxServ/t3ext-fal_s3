@@ -915,7 +915,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      */
     public function getFilesInFolder($folderIdentifier, $start = 0, $numberOfItems = 0, $recursive = false, array $filenameFilterCallbacks = array(), $sort = '', $sortRev = false)
     {
-        $folderEntries = $this->resolveFolderEntries($folderIdentifier, $recursive, true, false);
+        $folderEntries = $this->resolveFolderEntries($folderIdentifier, $recursive, true, false, $filenameFilterCallbacks);
 
         if (!$recursive) {
             $folderEntries = $this->sortFolderEntries($folderEntries, $sort, $sortRev);
@@ -1064,12 +1064,14 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
     /**
      * @param string $folderIdentifier
-     * @param bool $recursive
-     * @param bool $includeFiles
-     * @param bool $includeDirectories
+     * @param bool   $recursive
+     * @param bool   $includeFiles
+     * @param bool   $includeDirectories
+     * @param array  $filterMethods
+     *
      * @return array
      */
-    protected function resolveFolderEntries($folderIdentifier, $recursive = false, $includeFiles = true, $includeDirectories = true)
+    protected function resolveFolderEntries($folderIdentifier, $recursive = false, $includeFiles = true, $includeDirectories = true, array $filterMethods = [])
     {
         $excludedFolders = isset($this->configuration['excludedFolders']) ? $this->configuration['excludedFolders'] : [];
         if (in_array($folderIdentifier, $excludedFolders)) {
@@ -1120,15 +1122,60 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
             $isDirectory = substr($entry, -1) === '/';
             if ($isDirectory && !$includeDirectories) {
                 unset($directoryEntries[$entry]);
+                $iterator->next();
+                continue;
             }
             if (!$isDirectory && !$includeFiles) {
                 unset($directoryEntries[$entry]);
+                $iterator->next();
+                continue;
             }
             $iterator->next();
+            $file = $this->getFileInfoByIdentifier($entry);
+            if(! $this->applyFilterMethodsToDirectoryItem(
+                    $filterMethods,
+                    $file['name'],
+                    $file['identifier'],
+                    $this->getParentFolderIdentifierOfIdentifier($file['identifier']))
+            ) {
+                unset($directoryEntries[$entry]);
+            }
         }
 
         $this->configuration['excludedFolders'] = $excludedFolders;
         return array_values($directoryEntries);
+    }
+
+    /**
+     * Applies a set of filter methods to a file name to find out if it should be used or not. This is e.g. used by
+     * directory listings.
+     *
+     * @param array $filterMethods The filter methods to use
+     * @param string $itemName
+     * @param string $itemIdentifier
+     * @param string $parentIdentifier
+     * @throws \RuntimeException
+     * @return bool
+     */
+    protected function applyFilterMethodsToDirectoryItem(array $filterMethods, $itemName, $itemIdentifier, $parentIdentifier)
+    {
+        foreach ($filterMethods as $filter) {
+            if (is_callable($filter)) {
+                $result = call_user_func($filter, $itemName, $itemIdentifier, $parentIdentifier, [], $this);
+                // We have to use -1 as the „don't include“ return value, as call_user_func() will return FALSE
+                // If calling the method succeeded and thus we can't use that as a return value.
+                if ($result === -1) {
+                    return false;
+                }
+                if ($result === false) {
+                    throw new \RuntimeException(
+                        'Could not apply file/folder name filter ' . $filter[0] . '::' . $filter[1],
+                        1476046425
+                    );
+                }
+            }
+        }
+        return true;
     }
 
     /**
