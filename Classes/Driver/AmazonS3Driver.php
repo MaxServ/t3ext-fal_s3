@@ -699,7 +699,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
     {
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
 
-        return readfile($this->getStreamWrapperPath($fileIdentifier));
+        return file_get_contents($this->getStreamWrapperPath($fileIdentifier));
     }
 
     /**
