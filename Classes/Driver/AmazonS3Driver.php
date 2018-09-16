@@ -803,11 +803,12 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * buffer before. Will be taken care of by the Storage.
      *
      * @param string $identifier
+     *
      * @return void
      */
     public function dumpFileContents($identifier)
     {
-        echo $this->getFileContents($identifier);
+        readfile($this->getStreamWrapperPath($this->canonicalizeAndCheckFileIdentifier($identifier)), 0);
     }
 
     /**
