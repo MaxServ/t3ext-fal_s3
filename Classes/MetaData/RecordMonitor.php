@@ -58,7 +58,7 @@ class RecordMonitor
             || (
                 $file !== null
                 && $file->getType() !== AbstractFile::FILETYPE_IMAGE
-                && $file->getStorage()->getDriverType() !== AmazonS3Driver::DRIVER_KEY
+                || $file->getStorage()->getDriverType() !== AmazonS3Driver::DRIVER_KEY
             )
         ) {
             return;
