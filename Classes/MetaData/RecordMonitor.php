@@ -56,8 +56,11 @@ class RecordMonitor
         // break if the file couldn't be fetched or is not an image stored on S3
         if ($file === null
             || (
-                $file !== null
+                $file instanceof FileInterface
                 && $file->getType() !== AbstractFile::FILETYPE_IMAGE
+            )
+            || (
+                $file instanceof FileInterface
                 && $file->getStorage()->getDriverType() !== AmazonS3Driver::DRIVER_KEY
             )
         ) {
