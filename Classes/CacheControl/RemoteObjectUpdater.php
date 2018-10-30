@@ -153,7 +153,7 @@ class RemoteObjectUpdater
                 'Bucket' => $driverConfiguration['bucket'],
                 'CacheControl' => $cacheControl,
                 'ContentType' => $currentResource->get('ContentType'),
-                'CopySource' => $driverConfiguration['bucket'] . '/' . $key,
+                'CopySource' => $driverConfiguration['bucket'] . '/' . Aws\S3\S3Client::encodeKey($key),
                 'Key' => $key,
                 'Metadata' => $currentResource->get('Metadata'),
                 'MetadataDirective' => 'REPLACE'
