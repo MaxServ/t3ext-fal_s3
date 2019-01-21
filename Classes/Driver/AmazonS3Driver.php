@@ -419,6 +419,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
         }
 
         $this->flushCacheEntriesForFolder($targetFolderIdentifier);
+        unset($this->fileExistsCache[rtrim($targetFilePath, '/')]);
 
         return $targetFileIdentifier;
     }
@@ -434,6 +435,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
     {
         $parentFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($parentFolderIdentifier);
         $targetFileIdentifier = rtrim($parentFolderIdentifier, '/') . $this->canonicalizeAndCheckFileIdentifier($fileName);
+        $absolutePath = $this->getStreamWrapperPath($targetFileIdentifier);
         $basePath = '';
 
         if (array_key_exists('basePath', $this->configuration) && !empty($this->configuration['basePath'])) {
@@ -449,6 +451,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
         ));
 
         $this->flushCacheEntriesForFolder($parentFolderIdentifier);
+        unset($this->fileExistsCache[rtrim($absolutePath, '/')]);
 
         return $targetFileIdentifier;
     }
