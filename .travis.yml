@@ -27,7 +27,6 @@ before_install:
 
 before_script:
   - composer require typo3/minimal=$TYPO3_VERSION
-  - composer require typo3/cms-recordlist=$TYPO3_VERSION
   - git checkout composer.json
   - export TYPO3_PATH_WEB=$PWD/public/
 
@@ -35,7 +34,7 @@ script:
   - >
     echo;
     echo "Running unit tests";
-    .Build/bin/phpunit --colors -c vendor/nimut/testing-framework/res/Configuration/UnitTests.xml Tests/Unit/
+    vendor/bin/phpunit --colors -c vendor/nimut/testing-framework/res/Configuration/UnitTests.xml Tests/Unit/
 
   - >
     echo;
