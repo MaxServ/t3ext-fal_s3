@@ -27,5 +27,8 @@
     "require": {
         "typo3/cms-core": ">=6.2.12, <9.5.99",
         "aws/aws-sdk-php": "^3.2.3"
+    },
+    "require-dev": {
+        "nimut/testing-framework": "^4.1"
     }
 }
