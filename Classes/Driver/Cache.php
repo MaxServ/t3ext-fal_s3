@@ -111,7 +111,9 @@ class Cache extends Aws\LruArrayCache
     public static function getCacheFrontend()
     {
         if (self::$cacheFrontend === null && !empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3'])) {
-            self::$cacheFrontend = Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('tx_fal_s3');
+            $cacheManager = Core\Utility\GeneralUtility::makeInstance(Core\Cache\CacheManager::class);
+            $cacheManager->setCacheConfigurations($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
+            self::$cacheFrontend = $cacheManager->getCache('tx_fal_s3');
         }
         return self::$cacheFrontend;
     }
