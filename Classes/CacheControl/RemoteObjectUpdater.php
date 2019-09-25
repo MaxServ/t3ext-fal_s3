@@ -144,7 +144,7 @@ class RemoteObjectUpdater
             $cacheControl = FalS3\Utility\RemoteObjectUtility::resolveCacheControlDirectivesForFile($file);
         }
 
-        if ($cacheControl !== null
+        if (!empty($cacheControl)
             && $currentResource instanceof Aws\Result
             && $currentResource->hasKey('Metadata')
             && is_array($currentResource->get('Metadata'))
