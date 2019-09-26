@@ -148,6 +148,8 @@ class RemoteObjectUpdater
             && $currentResource instanceof Aws\Result
             && $currentResource->hasKey('Metadata')
             && is_array($currentResource->get('Metadata'))
+            && $currentResource->hasKey('CacheControl')
+            && strcmp($currentResource->get('CacheControl'), $cacheControl) !== 0
         ) {
             $client->copyObject(array(
                 'Bucket' => $driverConfiguration['bucket'],
