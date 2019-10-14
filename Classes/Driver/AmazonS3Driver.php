@@ -370,10 +370,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
     {
         $folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
 
-        $path = rtrim(
-            $this->getStreamWrapperPath($folderIdentifier),
-            '/'
-        );
+        $path = $this->getStreamWrapperPath($folderIdentifier);
 
         if (!array_key_exists($path, $this->folderExistsCache)) {
             $this->folderExistsCache[$path] = is_dir($path);
