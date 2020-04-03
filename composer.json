@@ -25,7 +25,7 @@
         "typo3-ter/fal_s3": "self.version"
     },
     "require": {
-        "typo3/cms-core": ">=6.2.12, <9.5.99",
+        "typo3/cms-core": ">=6.2.12, <10.4.99",
         "aws/aws-sdk-php": "^3.2.3"
     },
     "require-dev": {
