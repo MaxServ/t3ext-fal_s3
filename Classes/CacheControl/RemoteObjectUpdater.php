@@ -47,31 +47,31 @@ class RemoteObjectUpdater
         $file = null;
 
         try {
-            $file = GeneralUtility::makeInstance(ResourceFactory::class)->getFileObject(
-                $data['file']
-            );
+            $file = GeneralUtility::makeInstance(ResourceFactory::class)->getFileObject($data['file']);
         } catch (\Exception $e) {
             $file = null;
         }
 
-        if ($file->getStorage()->getDriverType() !== AmazonS3Driver::DRIVER_KEY) {
-            return;
-        }
+        if (isset($file)) {
+            if ($file->getStorage()->getDriverType() !== AmazonS3Driver::DRIVER_KEY) {
+                return;
+            }
 
-        $this->updateCacheControlDirectivesForRemoteObject($file);
+            $this->updateCacheControlDirectivesForRemoteObject($file);
 
-        if ($file instanceof File) {
-            $processedFileRepository = GeneralUtility::makeInstance(
-                ProcessedFileRepository::class
-            );
-            if ($processedFileRepository instanceof ProcessedFileRepository) {
-                $processedFiles = $processedFileRepository->findAllByOriginalFile($file);
-                array_walk(
-                    $processedFiles,
-                    function (ProcessedFile $processedFile) {
-                        $this->updateCacheControlDirectivesForRemoteObject($processedFile);
-                    }
+            if ($file instanceof File) {
+                $processedFileRepository = GeneralUtility::makeInstance(
+                    ProcessedFileRepository::class
                 );
+                if ($processedFileRepository instanceof ProcessedFileRepository) {
+                    $processedFiles = $processedFileRepository->findAllByOriginalFile($file);
+                    array_walk(
+                        $processedFiles,
+                        function (ProcessedFile $processedFile) {
+                            $this->updateCacheControlDirectivesForRemoteObject($processedFile);
+                        }
+                    );
+                }
             }
         }
 
