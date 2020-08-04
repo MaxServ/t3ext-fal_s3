@@ -1,4 +1,5 @@
 <?php
+
 namespace MaxServ\FalS3\Processing;
 
 /*
@@ -14,7 +15,13 @@ namespace MaxServ\FalS3\Processing;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3;
+use TYPO3\CMS\Core\Resource\Driver\DriverInterface;
+use TYPO3\CMS\Core\Resource\File;
+use TYPO3\CMS\Core\Resource\FileInterface;
+use TYPO3\CMS\Core\Resource\ProcessedFile;
+use TYPO3\CMS\Core\Resource\ProcessedFileRepository;
+use TYPO3\CMS\Core\Resource\Service\FileProcessingService;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Class ImagePreviewConfiguration
@@ -23,7 +30,6 @@ use TYPO3;
  */
 class ImagePreviewConfiguration
 {
-
     /**
      * @var int
      */
@@ -39,48 +45,48 @@ class ImagePreviewConfiguration
      *
      * In case of a preview image the repository is queried for a file without configuration
      * while is stores both `with` and `height`, this results in an additional processed file
-     * and unnecessary bytes being transfered to and from the storage.
+     * and unnecessary bytes being transferred to and from the storage.
      *
-     * @param TYPO3\CMS\Core\Resource\Service\FileProcessingService $fileProcessingService
-     * @param TYPO3\CMS\Core\Resource\Driver\DriverInterface $driver
-     * @param TYPO3\CMS\Core\Resource\ProcessedFile $processedFile
-     * @param TYPO3\CMS\Core\Resource\FileInterface $fileObject
+     * @param FileProcessingService $fileProcessingService
+     * @param DriverInterface $driver
+     * @param ProcessedFile $processedFile
+     * @param FileInterface $fileObject
      * @param string $taskType
      * @param array $configuration
      * @return void
      */
     public function onPreFileProcess(
-        TYPO3\CMS\Core\Resource\Service\FileProcessingService $fileProcessingService,
-        TYPO3\CMS\Core\Resource\Driver\DriverInterface $driver,
-        TYPO3\CMS\Core\Resource\ProcessedFile $processedFile,
-        TYPO3\CMS\Core\Resource\FileInterface $fileObject,
+        FileProcessingService $fileProcessingService,
+        DriverInterface $driver,
+        ProcessedFile $processedFile,
+        FileInterface $fileObject,
         $taskType,
         array $configuration
     ) {
-        if ($taskType === TYPO3\CMS\Core\Resource\ProcessedFile::CONTEXT_IMAGEPREVIEW
+        if ($taskType === ProcessedFile::CONTEXT_IMAGEPREVIEW
             && $processedFile->isNew()
             && empty($configuration)
             && self::isDefaultPreviewConfiguration($processedFile->getProcessingConfiguration())
         ) {
-            /** @var $processedFileRepository TYPO3\CMS\Core\Resource\ProcessedFileRepository */
-            $processedFileRepository = TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-                TYPO3\CMS\Core\Resource\ProcessedFileRepository::class
+            /** @var ProcessedFileRepository $processedFileRepository */
+            $processedFileRepository = GeneralUtility::makeInstance(
+                ProcessedFileRepository::class
             );
 
             // try to fetch an existing processed file for the preview with the default dimensions
             $existingProcessedFile = $processedFileRepository->findOneByOriginalFileAndTaskTypeAndConfiguration(
                 $fileObject,
                 $taskType,
-                array(
+                [
                     'width' => self::DEFAULT_PREVIEW_WIDTH,
                     'height' => self::DEFAULT_PREVIEW_HEIGHT
-                )
+                ]
             );
 
             // if an existing file exists update the processed file passed to this slot
-            if ($existingProcessedFile instanceof TYPO3\CMS\Core\Resource\ProcessedFile
+            if ($existingProcessedFile instanceof ProcessedFile
                 && $existingProcessedFile->isProcessed()
-                && $fileObject instanceof TYPO3\CMS\Core\Resource\File
+                && $fileObject instanceof File
             ) {
                 // basically $processedFile->reconstituteFromDatabaseRecord($databaseRow) would be sufficient,
                 // but since that method is protected use the next best (and dirtiest) thing
