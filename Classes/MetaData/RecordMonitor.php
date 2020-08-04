@@ -49,11 +49,11 @@ class RecordMonitor
             && array_key_exists('file', $data)
             && !empty($data['file'])
         ) {
-            $file = ResourceFactory::getInstance()->getFileObject($data['file'], []);
+            $file = GeneralUtility::makeInstance(ResourceFactory::class)->getFileObject($data['file'], []);
         } elseif (array_key_exists('uid', $data)
             && !empty($data['uid'])
         ) {
-            $file = ResourceFactory::getInstance()->getFileObject($data['uid'], $data);
+            $file = GeneralUtility::makeInstance(ResourceFactory::class)->getFileObject($data['uid'], $data);
         }
 
         // break if the file couldn't be fetched or is not an image stored on S3

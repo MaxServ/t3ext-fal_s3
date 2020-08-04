@@ -47,7 +47,7 @@ class RemoteObjectUpdater
         $file = null;
 
         try {
-            $file = ResourceFactory::getInstance()->getFileObject(
+            $file = GeneralUtility::makeInstance(ResourceFactory::class)->getFileObject(
                 $data['file']
             );
         } catch (\Exception $e) {
