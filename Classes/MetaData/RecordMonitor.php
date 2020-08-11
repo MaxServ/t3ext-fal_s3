@@ -17,7 +17,6 @@ namespace MaxServ\FalS3\MetaData;
 
 use MaxServ\FalS3\Driver\AmazonS3Driver;
 use TYPO3\CMS\Core\Resource\AbstractFile;
-use TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException;
 use TYPO3\CMS\Core\Resource\FileInterface;
 use TYPO3\CMS\Core\Resource\Index\MetaDataRepository;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
@@ -37,27 +36,29 @@ class RecordMonitor
      *
      * @return void
      *
-     * @throws FileDoesNotExistException
      */
     public function recordUpdatedOrCreated(array $data, $signal = null)
     {
         $file = null;
 
         // fetch the file using the $file property in case of a MetaData record
-        if ($signal !== null
+        if (
+            $signal !== null
             && strpos($signal, 'MetaDataRepository') !== false
             && array_key_exists('file', $data)
             && !empty($data['file'])
         ) {
             $file = GeneralUtility::makeInstance(ResourceFactory::class)->getFileObject($data['file'], []);
-        } elseif (array_key_exists('uid', $data)
+        } elseif (
+            array_key_exists('uid', $data)
             && !empty($data['uid'])
         ) {
             $file = GeneralUtility::makeInstance(ResourceFactory::class)->getFileObject($data['uid'], $data);
         }
 
         // break if the file couldn't be fetched or is not an image stored on S3
-        if ($file === null
+        if (
+            $file === null
             || ($file instanceof FileInterface && $file->getType() !== AbstractFile::FILETYPE_IMAGE)
             || ($file instanceof FileInterface && $file->getStorage()->getDriverType() !== AmazonS3Driver::DRIVER_KEY)
         ) {
@@ -70,7 +71,8 @@ class RecordMonitor
         $needsIdentification = true;
 
         // with or height is set skip identification
-        if ($signal !== null
+        if (
+            $signal !== null
             && strpos($signal, 'MetaDataRepository') !== false
             && array_key_exists('width', $data)
             && !empty($data['width'])

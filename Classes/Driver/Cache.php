@@ -17,7 +17,6 @@ namespace MaxServ\FalS3\Driver;
 
 use Aws\LruArrayCache;
 use TYPO3\CMS\Core\Cache\CacheManager;
-use TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException;
 use TYPO3\CMS\Core\Cache\Frontend\VariableFrontend;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -44,7 +43,6 @@ class Cache extends LruArrayCache
      * @param string $key Key to retrieve.
      *
      * @return mixed|null Returns the value or null if not found.
-     * @throws NoSuchCacheException
      */
     public function get($key)
     {
@@ -68,7 +66,6 @@ class Cache extends LruArrayCache
      * @param int $ttl In seconds, 0 = unlimited
      *
      * @return void
-     * @throws NoSuchCacheException
      */
     public function set($key, $value, $ttl = 0)
     {
@@ -87,7 +84,6 @@ class Cache extends LruArrayCache
      * @param string $key Key to remove.
      *
      * @return void
-     * @throws NoSuchCacheException
      */
     public function remove($key)
     {
@@ -113,12 +109,13 @@ class Cache extends LruArrayCache
 
     /**
      * @return VariableFrontend
-     * @throws NoSuchCacheException
      */
     public static function getCacheFrontend()
     {
-        if (self::$cacheFrontend === null
-            && !empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3'])) {
+        if (
+            self::$cacheFrontend === null
+            && !empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3'])
+        ) {
             $cacheManager = GeneralUtility::makeInstance(CacheManager::class);
             $cacheManager->setCacheConfigurations($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
             self::$cacheFrontend = $cacheManager->getCache('tx_fal_s3');

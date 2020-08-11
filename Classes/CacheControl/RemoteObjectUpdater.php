@@ -54,7 +54,7 @@ class RemoteObjectUpdater
 
         if (isset($file)) {
             if ($file->getStorage()->getDriverType() !== AmazonS3Driver::DRIVER_KEY) {
-                return;
+                return [$data];
             }
 
             $this->updateCacheControlDirectivesForRemoteObject($file);
@@ -103,7 +103,8 @@ class RemoteObjectUpdater
     ) {
         $fileInfo = $driver->getFileInfoByIdentifier($processedFile->getIdentifier());
 
-        if (is_array($fileInfo)
+        if (
+            is_array($fileInfo)
             && array_key_exists('mtime', $fileInfo)
             && (int)$fileInfo['mtime'] > (time() - 30)
         ) {
@@ -132,7 +133,8 @@ class RemoteObjectUpdater
 
         $key .= ltrim($file->getIdentifier(), '/');
 
-        if (is_array($driverConfiguration)
+        if (
+            is_array($driverConfiguration)
             && array_key_exists('bucket', $driverConfiguration)
             && $client instanceof S3Client
         ) {
@@ -157,7 +159,8 @@ class RemoteObjectUpdater
             $cacheControl = RemoteObjectUtility::resolveCacheControlDirectivesForFile($file);
         }
 
-        if (!empty($cacheControl)
+        if (
+            !empty($cacheControl)
             && $currentResource instanceof Result
             && $currentResource->hasKey('Metadata')
             && is_array($currentResource->get('Metadata'))

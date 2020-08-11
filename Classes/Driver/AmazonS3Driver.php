@@ -17,7 +17,6 @@ namespace MaxServ\FalS3\Driver;
 
 use Aws\S3\S3Client;
 use Aws\S3\StreamWrapper;
-use TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException;
 use TYPO3\CMS\Core\Resource\Driver\AbstractHierarchicalFilesystemDriver;
 use TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException;
 use TYPO3\CMS\Core\Resource\Exception\InvalidPathException;
@@ -115,7 +114,8 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         // if this storageConfiguration contains the mandatory key, secret and region properties
         // merge the configuration with the local array
         if (is_array($this->configuration) && array_key_exists('configurationKey', $this->configuration)) {
-            if (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']])
+            if (
+                isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']])
                 && is_array(
                     $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]
                 )
@@ -166,7 +166,8 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      */
     public function initialize()
     {
-        if (is_array($this->configuration)
+        if (
+            is_array($this->configuration)
             && array_key_exists('key', $this->configuration)
             && array_key_exists('region', $this->configuration)
             && array_key_exists('secret', $this->configuration)
@@ -223,8 +224,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * Returns the identifier of the default folder new files should be put into.
      *
      * @return string
-     * @throws InvalidPathException
-     * @throws NoSuchCacheException
      */
     public function getDefaultFolder()
     {
@@ -255,13 +254,17 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
 
         // if a basePath is configured prepend it to the file identifier
         // keep in mind that the basePath is appended to the public baseUrl
-        if (array_key_exists('basePath', $this->configuration) && !empty($this->configuration['basePath'])) {
+        if (
+            array_key_exists('basePath', $this->configuration)
+            && !empty($this->configuration['basePath'])
+        ) {
             $identifier = '/' . trim($this->configuration['basePath'], '/') . $identifier;
         }
 
         $publicUrl = '';
 
-        if (is_array($this->configuration)
+        if (
+            is_array($this->configuration)
             && (
                 (array_key_exists('bucket', $this->configuration) && !empty($this->configuration['bucket']))
                 || (array_key_exists('publicBaseUrl', $this->configuration)
@@ -271,7 +274,8 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
             $uriParts = GeneralUtility::trimExplode('/', $identifier, true);
             $uriParts = array_map('rawurlencode', $uriParts);
 
-            if (array_key_exists('publicBaseUrl', $this->configuration)
+            if (
+                array_key_exists('publicBaseUrl', $this->configuration)
                 && !empty($this->configuration['publicBaseUrl'])
             ) {
                 $publicUrl = rtrim($this->configuration['publicBaseUrl'], '/') . '/' .
@@ -295,8 +299,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param string $parentFolderIdentifier
      * @param bool $recursive
      * @return string the Identifier of the new folder
-     * @throws InvalidPathException
-     * @throws NoSuchCacheException
      */
     public function createFolder($newFolderName, $parentFolderIdentifier = '', $recursive = false)
     {
@@ -328,7 +330,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param string $newName
      * @return array A map of old to new file identifiers of all affected resources
      * @throws InvalidPathException
-     * @throws NoSuchCacheException
      */
     public function renameFolder($folderIdentifier, $newName)
     {
@@ -358,7 +359,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param bool $deleteRecursively
      * @return bool
      * @throws InvalidPathException
-     * @throws NoSuchCacheException
      */
     public function deleteFolder($folderIdentifier, $deleteRecursively = false)
     {
@@ -405,7 +405,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      *
      * @param string $folderIdentifier
      * @return bool
-     * @throws InvalidPathException
      */
     public function folderExists($folderIdentifier)
     {
@@ -426,7 +425,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param string $folderIdentifier
      * @return bool TRUE if there are no files and folders within $folder
      * @throws InvalidPathException
-     * @throws NoSuchCacheException
      */
     public function isFolderEmpty($folderIdentifier)
     {
@@ -447,7 +445,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      *                                after successful operation
      * @return string the identifier of the new file
      * @throws InvalidPathException
-     * @throws NoSuchCacheException
      */
     public function addFile($localFilePath, $targetFolderIdentifier, $newFileName = '', $removeOriginal = true)
     {
@@ -475,7 +472,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param string $parentFolderIdentifier
      * @return string
      * @throws InvalidPathException
-     * @throws NoSuchCacheException
      */
     public function createFile($fileName, $parentFolderIdentifier)
     {
@@ -515,7 +511,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param string $fileName
      * @return string the Identifier of the new file
      * @throws InvalidPathException
-     * @throws NoSuchCacheException
      */
     public function copyFileWithinStorage($fileIdentifier, $targetFolderIdentifier, $fileName)
     {
@@ -539,7 +534,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param string $newName The target path (including the file name!)
      * @return string The identifier of the file after renaming
      * @throws InvalidPathException
-     * @throws NoSuchCacheException
      */
     public function renameFile($fileIdentifier, $newName)
     {
@@ -576,7 +570,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param string $localFilePath
      * @return bool TRUE if the operation succeeded
      * @throws InvalidPathException
-     * @throws NoSuchCacheException
      */
     public function replaceFile($fileIdentifier, $localFilePath)
     {
@@ -597,7 +590,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param string $fileIdentifier
      * @return bool TRUE if deleting the file succeeded
      * @throws InvalidPathException
-     * @throws NoSuchCacheException
      */
     public function deleteFile($fileIdentifier)
     {
@@ -646,7 +638,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param string $newFileName
      * @return string
      * @throws InvalidPathException
-     * @throws NoSuchCacheException
      */
     public function moveFileWithinStorage($fileIdentifier, $targetFolderIdentifier, $newFileName)
     {
@@ -671,7 +662,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param string $targetFolderIdentifier
      * @param string $newFolderName
      * @return array All files which are affected, map of old => new file identifiers
-     * @throws NoSuchCacheException
      * @throws InvalidPathException
      */
     public function moveFolderWithinStorage($sourceFolderIdentifier, $targetFolderIdentifier, $newFolderName)
@@ -721,7 +711,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param string $targetFolderIdentifier
      * @param string $newFolderName
      * @return bool
-     * @throws NoSuchCacheException
      * @throws InvalidPathException
      */
     public function copyFolderWithinStorage($sourceFolderIdentifier, $targetFolderIdentifier, $newFolderName)
@@ -809,7 +798,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param string $folderName
      * @param string $folderIdentifier
      * @return bool
-     * @throws InvalidPathException
      */
     public function folderExistsInFolder($folderName, $folderIdentifier)
     {
@@ -856,7 +844,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      *
      * @param string $identifier
      * @return array
-     * @throws InvalidPathException
      */
     public function getPermissions($identifier)
     {
@@ -925,7 +912,8 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         $path = $this->getStreamWrapperPath($fileIdentifier);
         $lowercaseFileExtension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'])
+        if (
+            isset($GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'])
             && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'])
         ) {
             $fileExtensionToMimeTypeMapping = $GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'];
@@ -933,7 +921,8 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
 
         $mimetype = mimetype_from_extension($lowercaseFileExtension);
 
-        if ($mimetype === null
+        if (
+            $mimetype === null
             && array_key_exists($lowercaseFileExtension, $fileExtensionToMimeTypeMapping)
             && !empty($fileExtensionToMimeTypeMapping[$lowercaseFileExtension])
         ) {
@@ -961,7 +950,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      *
      * @param string $folderIdentifier
      * @return array
-     * @throws InvalidPathException
      */
     public function getFolderInfoByIdentifier($folderIdentifier)
     {
@@ -990,7 +978,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param bool $sortRev TRUE to indicate reverse sorting (last to first)
      * @return array of FileIdentifiers
      * @throws InvalidPathException
-     * @throws NoSuchCacheException
      */
     public function getFilesInFolder(
         $folderIdentifier,
@@ -1053,7 +1040,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param bool $sortRev TRUE to indicate reverse sorting (last to first)
      * @return array of Folder Identifier
      * @throws InvalidPathException
-     * @throws NoSuchCacheException
      */
     public function getFoldersInFolder(
         $folderIdentifier,
@@ -1094,7 +1080,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param string $folderName The name of the target folder
      * @param string $folderIdentifier
      * @return string folder identifier
-     * @throws InvalidPathException
      */
     public function getFolderInFolder($folderName, $folderIdentifier)
     {
@@ -1108,7 +1093,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param boolean $recursive
      * @param array $filenameFilterCallbacks callbacks for filtering the items
      * @return integer Number of files in folder
-     * @throws NoSuchCacheException
      * @throws InvalidPathException
      */
     public function countFilesInFolder($folderIdentifier, $recursive = false, array $filenameFilterCallbacks = [])
@@ -1124,7 +1108,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param array $folderNameFilterCallbacks callbacks for filtering the items
      * @return integer Number of folders in folder
      * @throws InvalidPathException
-     * @throws NoSuchCacheException
      */
     public function countFoldersInFolder($folderIdentifier, $recursive = false, array $folderNameFilterCallbacks = [])
     {
@@ -1185,7 +1168,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param array $filterMethods
      *
      * @return array
-     * @throws NoSuchCacheException
      * @throws InvalidPathException
      */
     protected function resolveFolderEntries(
@@ -1256,12 +1238,14 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
             }
             $iterator->next();
             $file = $this->getFileInfoByIdentifier($entry);
-            if (!$this->applyFilterMethodsToDirectoryItem(
+            if (
+            !$this->applyFilterMethodsToDirectoryItem(
                 $filterMethods,
                 $file['name'],
                 $file['identifier'],
                 $this->getParentFolderIdentifierOfIdentifier($file['identifier'])
-            )) {
+            )
+            ) {
                 unset($directoryEntries[$entry]);
             }
         }
@@ -1313,7 +1297,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param string $method
      * @param bool $reverse
      * @return array
-     * @throws InvalidPathException
      */
     protected function sortFolderEntries($folderEntries, $method = '', $reverse = false)
     {
@@ -1391,8 +1374,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * @param string $folderIdentifier
      *
      * @return void
-     * @throws NoSuchCacheException
-     * @throws InvalidPathException
      */
     protected function flushCacheEntriesForFolder($folderIdentifier)
     {

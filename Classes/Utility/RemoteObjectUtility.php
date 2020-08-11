@@ -112,20 +112,23 @@ class RemoteObjectUtility
         $configurationKey = ($isProcessed ? 'processed-file:' : 'file:') . $file->getType();
         $driverConfiguration = self::resolveDriverConfigurationForStorage($file->getStorage());
 
-        if (array_key_exists('cacheControl', $driverConfiguration)
+        if (
+            array_key_exists('cacheControl', $driverConfiguration)
             && is_array($driverConfiguration['cacheControl'])
             && array_key_exists($configurationKey, $driverConfiguration['cacheControl'])
         ) {
             $directives = $driverConfiguration['cacheControl'][$configurationKey];
         }
 
-        if (is_array($directives)
+        if (
+            is_array($directives)
             && ((array_key_exists('private', $directives) && $directives['private']))
         ) {
             $cacheControl[] = 'private';
         }
 
-        if (is_array($directives)
+        if (
+            is_array($directives)
             && array_key_exists('max-age', $directives)
             && $directives['max-age'] > 0
         ) {
@@ -133,7 +136,8 @@ class RemoteObjectUtility
         }
 
         // if a no-store directive is set ignore earlier parts
-        if (is_array($directives)
+        if (
+            is_array($directives)
             && array_key_exists('no-store', $directives)
             && $directives['no-store']
         ) {

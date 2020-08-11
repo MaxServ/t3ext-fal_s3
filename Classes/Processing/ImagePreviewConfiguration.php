@@ -63,7 +63,8 @@ class ImagePreviewConfiguration
         $taskType,
         array $configuration
     ) {
-        if ($taskType === ProcessedFile::CONTEXT_IMAGEPREVIEW
+        if (
+            $taskType === ProcessedFile::CONTEXT_IMAGEPREVIEW
             && $processedFile->isNew()
             && empty($configuration)
             && self::isDefaultPreviewConfiguration($processedFile->getProcessingConfiguration())
@@ -84,7 +85,8 @@ class ImagePreviewConfiguration
             );
 
             // if an existing file exists update the processed file passed to this slot
-            if ($existingProcessedFile instanceof ProcessedFile
+            if (
+                $existingProcessedFile instanceof ProcessedFile
                 && $existingProcessedFile->isProcessed()
                 && $fileObject instanceof File
             ) {

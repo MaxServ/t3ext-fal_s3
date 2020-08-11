@@ -28,13 +28,16 @@ class FlexFormUtility
      */
     public function getStorageConfigurations(array $parameters)
     {
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'])
+        if (
+            isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'])
             && is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'])
         ) {
             foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'] as $configurationKey => $storageConfiguration) {
-                if (is_array($storageConfiguration)
+                if (
+                    is_array($storageConfiguration)
                     && array_key_exists('title', $storageConfiguration)
-                    && !empty($storageConfiguration['title'])) {
+                    && !empty($storageConfiguration['title'])
+                ) {
                     $parameters['items'][] = [$storageConfiguration['title'], $configurationKey];
                 }
             }
