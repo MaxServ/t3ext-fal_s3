@@ -29,6 +29,6 @@
         "aws/aws-sdk-php": "^3.2.3"
     },
     "require-dev": {
-        "nimut/testing-framework": "^4.1"
+        "nimut/testing-framework": "^4.1 || ^5.1"
     }
 }
