@@ -935,9 +935,11 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         return [
             'name' => basename($fileIdentifier),
             'identifier' => $fileIdentifier,
+            'atime' => fileatime($path),
             'ctime' => filectime($path),
             'mtime' => filemtime($path),
             'mimetype' => $mimetype !== null ? $mimetype : 'application/octet-stream',
+            'extension' => pathinfo($fileIdentifier, PATHINFO_EXTENSION),
             'size' => (int)filesize($path),
             'identifier_hash' => $this->hashIdentifier($fileIdentifier),
             'folder_hash' => $this->hashIdentifier(PathUtility::dirname($fileIdentifier)),
