@@ -907,44 +907,101 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      */
     public function getFileInfoByIdentifier($fileIdentifier, array $propertiesToExtract = [])
     {
-        $fileExtensionToMimeTypeMapping = [];
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
         $path = $this->getStreamWrapperPath($fileIdentifier);
+        return $this->extractFileInformation($fileIdentifier, $path, $propertiesToExtract);
+    }
+
+    /**
+     * Extracts information about a file from the filesystem.
+     *
+     * @param string $fileIdentifier The fileIdentifier
+     * @param string $path The path to the file
+     * @param array $propertiesToExtract array of properties which should be returned, if empty all will be extracted
+     * @return array
+     */
+    protected function extractFileInformation(string $fileIdentifier, string $path, array $propertiesToExtract = [])
+    {
+        if (empty($propertiesToExtract)) {
+            $propertiesToExtract = [
+                'size',
+                'atime',
+                'mtime',
+                'ctime',
+                'mimetype',
+                'name',
+                'extension',
+                'identifier',
+                'identifier_hash',
+                'storage',
+                'folder_hash'
+            ];
+        }
+        $fileInformation = [];
+        foreach ($propertiesToExtract as $property) {
+            $fileInformation[$property] = $this->getSpecificFileInformation($fileIdentifier, $path, $property);
+        }
+        return $fileInformation;
+    }
+
+    /**
+     * Extracts a specific FileInformation from the FileSystems.
+     *
+     * @param string $fileIdentifier
+     * @param string $path
+     * @param string $property
+     *
+     * @return bool|int|string
+     * @throws \InvalidArgumentException
+     */
+    public function getSpecificFileInformation(string $fileIdentifier, string $path, string $property)
+    {
+        switch ($property) {
+            case 'size':
+                return (int)filesize($path);
+            case 'atime':
+                return fileatime($path);
+            case 'mtime':
+                return filemtime($path);
+            case 'ctime':
+                return filectime($path);
+            case 'name':
+                return basename($fileIdentifier);
+            case 'extension':
+                return pathinfo($fileIdentifier, PATHINFO_EXTENSION);
+            case 'mimetype':
+                return $this->getFileMimeType($path);
+            case 'identifier':
+                return $fileIdentifier;
+            case 'storage':
+                return $this->storageUid;
+            case 'identifier_hash':
+                return $this->hashIdentifier($fileIdentifier);
+            case 'folder_hash':
+                return $this->hashIdentifier(PathUtility::dirname($fileIdentifier));
+            default:
+                throw new \InvalidArgumentException(
+                    sprintf('The information "%s" is not available.', $property),
+                    1597926187
+                );
+        }
+    }
+
+    /**
+     * @param string $path
+     * @return string
+     */
+    public function getFileMimeType(string $path)
+    {
+        $fileExtensionToMimeTypeMapping = $GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'];
         $lowercaseFileExtension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $mimeType = mimetype_from_extension($lowercaseFileExtension);
 
-        if (
-            isset($GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'])
-        ) {
-            $fileExtensionToMimeTypeMapping = $GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'];
+        if ($mimeType === null && !empty($fileExtensionToMimeTypeMapping[$lowercaseFileExtension])) {
+            $mimeType = $fileExtensionToMimeTypeMapping[$lowercaseFileExtension];
         }
 
-        $mimetype = mimetype_from_extension($lowercaseFileExtension);
-
-        if (
-            $mimetype === null
-            && array_key_exists($lowercaseFileExtension, $fileExtensionToMimeTypeMapping)
-            && !empty($fileExtensionToMimeTypeMapping[$lowercaseFileExtension])
-        ) {
-            $mimetype = $fileExtensionToMimeTypeMapping[$lowercaseFileExtension];
-        }
-
-        // if a mimetype can't be resolved use application/octet-stream
-        // see http://stackoverflow.com/a/12560996
-        // just returning NULL leads to errors while persisting
-        return [
-            'name' => basename($fileIdentifier),
-            'identifier' => $fileIdentifier,
-            'atime' => fileatime($path),
-            'ctime' => filectime($path),
-            'mtime' => filemtime($path),
-            'mimetype' => $mimetype !== null ? $mimetype : 'application/octet-stream',
-            'extension' => pathinfo($fileIdentifier, PATHINFO_EXTENSION),
-            'size' => (int)filesize($path),
-            'identifier_hash' => $this->hashIdentifier($fileIdentifier),
-            'folder_hash' => $this->hashIdentifier(PathUtility::dirname($fileIdentifier)),
-            'storage' => $this->storageUid
-        ];
+        return $mimeType !== null ? $mimeType : 'application/octet-stream';
     }
 
     /**
