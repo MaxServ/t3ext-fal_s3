@@ -279,7 +279,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
         }
         $path = $this->getStreamWrapperPath($identifier);
 
-        mkdir($path, $GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask'], $recursive);
+        mkdir($path, octdec($GLOBALS['TYPO3_CONF_VARS']['SYS']['folderCreateMask']), $recursive);
 
         $this->flushCacheEntriesForFolder($parentFolderIdentifier);
 
@@ -675,7 +675,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
                 // use mkdir to create a new directory instead of copying the resource
             if (substr($sourcePath, -1) === '/') {
-                mkdir($targetPath, $GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask'], true);
+                mkdir($targetPath, octdec($GLOBALS['TYPO3_CONF_VARS']['SYS']['folderCreateMask']), true);
             } else {
                 copy($sourcePath, $targetPath);
             }
