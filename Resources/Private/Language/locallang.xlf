@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.0">
+    <file source-language="en" datatype="plaintext" original="messages" product-name="fal_s3">
+        <header/>
+        <body>
+            <trans-unit id="flushFalS3Cache" xml:space="preserve">
+                <source>Flush Fal S3 caches</source>
+            </trans-unit>
+            <trans-unit id="flushFalS3Cache.description" xml:space="preserve">
+                <source>Clear Fal S3 filelist related caches.</source>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>
