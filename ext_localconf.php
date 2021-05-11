@@ -109,12 +109,6 @@ call_user_func(function () {
         'onPostFileProcess'
     );
 
-    $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['deployer']['configuration']['FalS3.yaml'] = [
-        'converter' => 'MaxServ\\FalS3\\Configuration\\ConfigurationConverter',
-        'definition' => 'MaxServ\\FalS3\\Configuration\\ConfigurationDefinition',
-        'loader' => 'MaxServ\\FalS3\\Configuration\\ConfigurationLoader'
-    ];
-
     // Register cache 'tx_fal_s3'
     if (!isset($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3']['groups'])) {
         $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3']['groups'] = [
