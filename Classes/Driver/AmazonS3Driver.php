@@ -1,4 +1,5 @@
 <?php
+
 namespace MaxServ\FalS3\Driver;
 
 /*
@@ -14,30 +15,40 @@ namespace MaxServ\FalS3\Driver;
  * The TYPO3 project - inspiring people to share!
  */
 
-use Aws;
-use GuzzleHttp;
-use TYPO3;
+use Aws\S3\S3Client;
+use Aws\S3\StreamWrapper;
+use TYPO3\CMS\Core\Resource\Driver\AbstractHierarchicalFilesystemDriver;
+use TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException;
+use TYPO3\CMS\Core\Resource\Exception\InvalidPathException;
+use TYPO3\CMS\Core\Resource\FileInterface;
+use TYPO3\CMS\Core\Resource\Folder;
+use TYPO3\CMS\Core\Resource\ResourceStorage;
+use TYPO3\CMS\Core\Resource\StorageRepository;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\PathUtility;
+
+use function GuzzleHttp\Psr7\mimetype_from_extension;
 
 /**
  * Class AmazonS3Driver
  *
  * @package MaxServ\FalS3\Driver
  */
-class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchicalFilesystemDriver
+class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
 {
-
     /**
      * @var string
      */
     const DRIVER_KEY = 'MaxServ.FalS3';
 
     /**
-     * @var Aws\S3\S3Client
+     * @var S3Client
      */
     protected $s3Client;
 
     /**
-     * @var \TYPO3\CMS\Core\Resource\ResourceStorage
+     * @var ResourceStorage
      */
     protected $storage;
 
@@ -46,34 +57,34 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      *
      * @var array
      */
-    protected $temporaryFiles = array();
+    protected $temporaryFiles = [];
 
     /**
      * Simple runtime cache to prevent numerous calls to S3 or the Caching Framework
      *
      * @var array
      */
-    protected $fileExistsCache = array();
+    protected $fileExistsCache = [];
 
     /**
      * Simple runtime cache to prevent numerous calls to S3 or the Caching Framework
      *
      * @var array
      */
-    protected $folderExistsCache = array();
+    protected $folderExistsCache = [];
 
     /**
      * Initialize this driver and expose the capabilities for the repository to use
      *
      * @param array $configuration
      */
-    public function __construct(array $configuration = array())
+    public function __construct(array $configuration = [])
     {
         parent::__construct($configuration);
 
-        $this->capabilities = TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_BROWSABLE |
-            TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_PUBLIC |
-            TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_WRITABLE;
+        $this->capabilities = ResourceStorage::CAPABILITY_BROWSABLE |
+            ResourceStorage::CAPABILITY_PUBLIC |
+            ResourceStorage::CAPABILITY_WRITABLE;
     }
 
     /**
@@ -94,44 +105,53 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * Processes the configuration for this driver.
      *
      * @return void
-     * @throws TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException
+     * @throws InvalidConfigurationException
      */
     public function processConfiguration()
     {
-            // check if a configurationKey is set in the configuration of this storage
-            // next check if the key references to a storageConfiguration for this driver
-            // if this storageConfiguration contains the mandatory key, secret and region properties
-            // merge the configuration with the local array
+        // check if a configurationKey is set in the configuration of this storage
+        // next check if the key references to a storageConfiguration for this driver
+        // if this storageConfiguration contains the mandatory key, secret and region properties
+        // merge the configuration with the local array
         if (is_array($this->configuration) && array_key_exists('configurationKey', $this->configuration)) {
-            if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF'])
-                && array_key_exists('fal_s3', $GLOBALS['TYPO3_CONF_VARS']['EXTCONF'])
-                && is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3'])
-                && array_key_exists('storageConfigurations', $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3'])
-                && is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'])
-                && array_key_exists($this->configuration['configurationKey'], $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'])
-                && is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']])
-                && array_key_exists('key', $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']])
+            if (
+                isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']])
+                && is_array(
+                    $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]
+                )
+                && array_key_exists(
+                    'key',
+                    $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]
+                )
                 && !empty($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]['key'])
-                && array_key_exists('region', $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']])
+                && array_key_exists(
+                    'region',
+                    $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]
+                )
                 && !empty($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]['region'])
-                && array_key_exists('secret', $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']])
+                && array_key_exists(
+                    'secret',
+                    $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]
+                )
                 && !empty($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]['secret'])
             ) {
-                TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule(
+                ArrayUtility::mergeRecursiveWithOverrule(
                     $this->configuration,
                     $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]
                 );
-                $this->configuration['excludedFolders'] = isset($this->configuration['excludedFolders']) ? $this->configuration['excludedFolders'] : [];
+                $this->configuration['excludedFolders'] = isset($this->configuration['excludedFolders'])
+                    ? $this->configuration['excludedFolders']
+                    : [];
             } else {
-                    // throw an InvalidConfigurationException to trigger the storage to mark itself as offline
-                throw new TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException(
+                // throw an InvalidConfigurationException to trigger the storage to mark itself as offline
+                throw new InvalidConfigurationException(
                     'Missing configuration for "' . $this->configuration['configurationKey'] . '"',
                     1438785908
                 );
             }
         } else {
-                // throw an InvalidConfigurationException to trigger the storage to mark itself as offline
-            throw new TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException(
+            // throw an InvalidConfigurationException to trigger the storage to mark itself as offline
+            throw new InvalidConfigurationException(
                 'Unable to resolve a configurationKey for this driver instance',
                 1438785477
             );
@@ -146,29 +166,33 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      */
     public function initialize()
     {
-        if (is_array($this->configuration) && array_key_exists('region', $this->configuration)
-            && array_key_exists('key', $this->configuration) && array_key_exists('secret', $this->configuration)
-            ) {
-            $this->s3Client = new Aws\S3\S3Client(array(
-                'version' => '2006-03-01',
-                'region' => $this->configuration['region'],
-                'credentials' => array(
-                    'key' => $this->configuration['key'],
-                    'secret' => $this->configuration['secret']
-                )
-            ));
+        if (
+            is_array($this->configuration)
+            && array_key_exists('key', $this->configuration)
+            && array_key_exists('region', $this->configuration)
+            && array_key_exists('secret', $this->configuration)
+        ) {
+            $this->s3Client = new S3Client(
+                [
+                    'version' => '2006-03-01',
+                    'region' => $this->configuration['region'],
+                    'credentials' => [
+                        'key' => $this->configuration['key'],
+                        'secret' => $this->configuration['secret']
+                    ]
+                ]
+            );
 
-                // strip the s3 protocol prefix from the bucket name
+            // strip the s3 protocol prefix from the bucket name
             if (strpos($this->configuration['bucket'], 's3://') === 0) {
                 $this->configuration['bucket'] = substr($this->configuration['bucket'], 5);
             }
 
-                // to prevent collisions between multiple S3 drivers using a stream_wrapper use a unique protocol key
-            $this->configuration['stream_protocol'] = 's3.' . TYPO3\CMS\Core\Utility\GeneralUtility::shortMD5(
-                self::DRIVER_KEY . '.' . $this->configuration['configurationKey']
-            );
+            // to prevent collisions between multiple S3 drivers using a stream_wrapper use a unique protocol key
+            $this->configuration['stream_protocol'] = 's3.'
+                . GeneralUtility::shortMD5(self::DRIVER_KEY . '.' . $this->configuration['configurationKey']);
 
-            Aws\S3\StreamWrapper::register($this->s3Client, $this->configuration['stream_protocol'], new Cache());
+            StreamWrapper::register($this->s3Client, $this->configuration['stream_protocol'], new Cache());
         }
     }
 
@@ -222,25 +246,38 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      *
      * @param string $identifier
      * @return string
+     * @throws InvalidPathException
      */
     public function getPublicUrl($identifier)
     {
         $identifier = $this->canonicalizeAndCheckFileIdentifier($identifier);
 
-            // if a basePath is configured prepend it to the file identifier
-            // keep in mind that the basePath is appended to the public baseUrl
-        if (array_key_exists('basePath', $this->configuration) && !empty($this->configuration['basePath'])) {
+        // if a basePath is configured prepend it to the file identifier
+        // keep in mind that the basePath is appended to the public baseUrl
+        if (
+            array_key_exists('basePath', $this->configuration)
+            && !empty($this->configuration['basePath'])
+        ) {
             $identifier = '/' . trim($this->configuration['basePath'], '/') . $identifier;
         }
 
         $publicUrl = '';
 
-        if (is_array($this->configuration) && ((array_key_exists('bucket', $this->configuration) && !empty($this->configuration['bucket']))
-            || (array_key_exists('publicBaseUrl', $this->configuration) && !empty($this->configuration['publicBaseUrl'])))) {
-            $uriParts = TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('/', $identifier, true);
+        if (
+            is_array($this->configuration)
+            && (
+                (array_key_exists('bucket', $this->configuration) && !empty($this->configuration['bucket']))
+                || (array_key_exists('publicBaseUrl', $this->configuration)
+                    && !empty($this->configuration['publicBaseUrl']))
+            )
+        ) {
+            $uriParts = GeneralUtility::trimExplode('/', $identifier, true);
             $uriParts = array_map('rawurlencode', $uriParts);
 
-            if (array_key_exists('publicBaseUrl', $this->configuration) && !empty($this->configuration['publicBaseUrl'])) {
+            if (
+                array_key_exists('publicBaseUrl', $this->configuration)
+                && !empty($this->configuration['publicBaseUrl'])
+            ) {
                 $publicUrl = rtrim($this->configuration['publicBaseUrl'], '/') . '/' .
                     implode('/', $uriParts);
             } else {
@@ -272,8 +309,8 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
             $newFolderName = $this->sanitizeFileName($newFolderName);
             $identifier = $parentFolderIdentifier . $newFolderName . '/';
         } else {
-            $parts = TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('/', $newFolderName);
-            $parts = array_map(array($this, 'sanitizeFileName'), $parts);
+            $parts = GeneralUtility::trimExplode('/', $newFolderName);
+            $parts = array_map([$this, 'sanitizeFileName'], $parts);
             $newFolderName = implode('/', $parts);
             $identifier = $parentFolderIdentifier . $newFolderName . '/';
         }
@@ -292,6 +329,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param string $folderIdentifier
      * @param string $newName
      * @return array A map of old to new file identifiers of all affected resources
+     * @throws InvalidPathException
      */
     public function renameFolder($folderIdentifier, $newName)
     {
@@ -320,6 +358,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param string $folderIdentifier
      * @param bool $deleteRecursively
      * @return bool
+     * @throws InvalidPathException
      */
     public function deleteFolder($folderIdentifier, $deleteRecursively = false)
     {
@@ -329,7 +368,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
         if ($deleteRecursively) {
             $foldersInFolder = $this->resolveFolderEntries($folderIdentifier, true, false, true);
 
-            array_map(array($this, 'deleteFolder'), $foldersInFolder);
+            array_map([$this, 'deleteFolder'], $foldersInFolder);
         }
 
         $this->flushCacheEntriesForFolder($folderIdentifier);
@@ -343,6 +382,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      *
      * @param string $fileIdentifier
      * @return bool
+     * @throws InvalidPathException
      */
     public function fileExists($fileIdentifier)
     {
@@ -384,10 +424,12 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      *
      * @param string $folderIdentifier
      * @return bool TRUE if there are no files and folders within $folder
+     * @throws InvalidPathException
      */
     public function isFolderEmpty($folderIdentifier)
     {
-        return $this->countFilesInFolder($folderIdentifier) === 0 && $this->countFoldersInFolder($folderIdentifier) === 0;
+        return $this->countFilesInFolder($folderIdentifier) === 0
+            && $this->countFoldersInFolder($folderIdentifier) === 0;
     }
 
     /**
@@ -402,11 +444,13 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param bool $removeOriginal if set the original file will be removed
      *                                after successful operation
      * @return string the identifier of the new file
+     * @throws InvalidPathException
      */
     public function addFile($localFilePath, $targetFolderIdentifier, $newFileName = '', $removeOriginal = true)
     {
         $targetFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($targetFolderIdentifier);
-        $targetFileIdentifier = rtrim($targetFolderIdentifier, '/') . $this->canonicalizeAndCheckFileIdentifier($newFileName);
+        $targetFileIdentifier = rtrim($targetFolderIdentifier, '/')
+            . $this->canonicalizeAndCheckFileIdentifier($newFileName);
         $targetFilePath = $this->getStreamWrapperPath($targetFileIdentifier);
 
         copy($localFilePath, $targetFilePath);
@@ -427,25 +471,29 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param string $fileName
      * @param string $parentFolderIdentifier
      * @return string
+     * @throws InvalidPathException
      */
     public function createFile($fileName, $parentFolderIdentifier)
     {
         $parentFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($parentFolderIdentifier);
-        $targetFileIdentifier = rtrim($parentFolderIdentifier, '/') . $this->canonicalizeAndCheckFileIdentifier($fileName);
+        $targetFileIdentifier = rtrim($parentFolderIdentifier, '/')
+            . $this->canonicalizeAndCheckFileIdentifier($fileName);
         $absolutePath = $this->getStreamWrapperPath($targetFileIdentifier);
         $basePath = '';
 
         if (array_key_exists('basePath', $this->configuration) && !empty($this->configuration['basePath'])) {
             $basePath = '/' . trim($this->configuration['basePath'], '/');
-        }       
+        }
 
         // create an empty file using the putObject method instead of the wrapper
         // file_put_contents() without data or touch() yield unexpected results
-        $this->s3Client->putObject(array(
-            'Bucket' => $this->configuration['bucket'],
-            'Key' => ltrim($basePath . $targetFileIdentifier, '/'),
-            'Body' => ''
-        ));
+        $this->s3Client->putObject(
+            [
+                'Bucket' => $this->configuration['bucket'],
+                'Key' => ltrim($basePath . $targetFileIdentifier, '/'),
+                'Body' => ''
+            ]
+        );
 
         $this->flushCacheEntriesForFolder($parentFolderIdentifier);
         unset($this->fileExistsCache[rtrim($absolutePath, '/')]);
@@ -462,6 +510,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param string $targetFolderIdentifier
      * @param string $fileName
      * @return string the Identifier of the new file
+     * @throws InvalidPathException
      */
     public function copyFileWithinStorage($fileIdentifier, $targetFolderIdentifier, $fileName)
     {
@@ -484,6 +533,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param string $fileIdentifier
      * @param string $newName The target path (including the file name!)
      * @return string The identifier of the file after renaming
+     * @throws InvalidPathException
      */
     public function renameFile($fileIdentifier, $newName)
     {
@@ -519,6 +569,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param string $fileIdentifier
      * @param string $localFilePath
      * @return bool TRUE if the operation succeeded
+     * @throws InvalidPathException
      */
     public function replaceFile($fileIdentifier, $localFilePath)
     {
@@ -538,6 +589,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      *
      * @param string $fileIdentifier
      * @return bool TRUE if deleting the file succeeded
+     * @throws InvalidPathException
      */
     public function deleteFile($fileIdentifier)
     {
@@ -555,6 +607,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param string $fileIdentifier
      * @param string $hashAlgorithm The hash algorithm to use
      * @return string
+     * @throws InvalidPathException
      */
     public function hash($fileIdentifier, $hashAlgorithm)
     {
@@ -584,6 +637,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param string $targetFolderIdentifier
      * @param string $newFileName
      * @return string
+     * @throws InvalidPathException
      */
     public function moveFileWithinStorage($fileIdentifier, $targetFolderIdentifier, $newFileName)
     {
@@ -608,6 +662,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param string $targetFolderIdentifier
      * @param string $newFolderName
      * @return array All files which are affected, map of old => new file identifiers
+     * @throws InvalidPathException
      */
     public function moveFolderWithinStorage($sourceFolderIdentifier, $targetFolderIdentifier, $newFolderName)
     {
@@ -656,6 +711,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param string $targetFolderIdentifier
      * @param string $newFolderName
      * @return bool
+     * @throws InvalidPathException
      */
     public function copyFolderWithinStorage($sourceFolderIdentifier, $targetFolderIdentifier, $newFolderName)
     {
@@ -667,13 +723,15 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
         foreach ($sourceDirectoryContents as $sourceEntry) {
             $sourcePath = $this->getStreamWrapperPath($sourceEntry);
-            $targetPath = $this->getStreamWrapperPath(str_replace(
-                $sourceFolderIdentifier,
-                $targetFolderIdentifier,
-                $sourceEntry
-            ));
+            $targetPath = $this->getStreamWrapperPath(
+                str_replace(
+                    $sourceFolderIdentifier,
+                    $targetFolderIdentifier,
+                    $sourceEntry
+                )
+            );
 
-                // use mkdir to create a new directory instead of copying the resource
+            // use mkdir to create a new directory instead of copying the resource
             if (substr($sourcePath, -1) === '/') {
                 mkdir($targetPath, octdec($GLOBALS['TYPO3_CONF_VARS']['SYS']['folderCreateMask']), true);
             } else {
@@ -694,6 +752,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      *
      * @param string $fileIdentifier
      * @return string The file contents
+     * @throws InvalidPathException
      */
     public function getFileContents($fileIdentifier)
     {
@@ -708,6 +767,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param string $fileIdentifier
      * @param string $contents
      * @return int The number of bytes written to the file
+     * @throws InvalidPathException
      */
     public function setFileContents($fileIdentifier, $contents)
     {
@@ -722,6 +782,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param string $fileName
      * @param string $folderIdentifier
      * @return bool
+     * @throws InvalidPathException
      */
     public function fileExistsInFolder($fileName, $folderIdentifier)
     {
@@ -756,6 +817,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      *                       a cached local version. Never modify the file if you
      *                       have set this flag!
      * @return string The path to the file on the local disk
+     * @throws InvalidPathException
      */
     public function getFileForLocalProcessing($fileIdentifier, $writable = true)
     {
@@ -789,12 +851,10 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
         $path = $this->getStreamWrapperPath(rtrim($identifier, '/'));
 
-        $permissions = array(
+        return [
             'r' => is_readable($path),
             'w' => is_writable($path)
-        );
-
-        return $permissions;
+        ];
     }
 
     /**
@@ -805,6 +865,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param string $identifier
      *
      * @return void
+     * @throws InvalidPathException
      */
     public function dumpFileContents($identifier)
     {
@@ -823,13 +884,16 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param string $folderIdentifier
      * @param string $identifier identifier to be checked against $folderIdentifier
      * @return bool TRUE if $content is within or matches $folderIdentifier
+     * @throws InvalidPathException
      */
     public function isWithin($folderIdentifier, $identifier)
     {
         $folderIdentifier = $this->canonicalizeAndCheckFileIdentifier($folderIdentifier);
         $identifier = $this->canonicalizeAndCheckFileIdentifier($identifier);
         return $folderIdentifier === $identifier
-            || ($folderIdentifier !== $identifier && $folderIdentifier !== '' && strpos($identifier, $folderIdentifier) === 0);
+            || ($folderIdentifier !== $identifier
+                && $folderIdentifier !== ''
+                && strpos($identifier, $folderIdentifier) === 0);
     }
 
     /**
@@ -839,46 +903,105 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param array $propertiesToExtract Array of properties which are be extracted
      *                                   If empty all will be extracted
      * @return array
+     * @throws InvalidPathException
      */
-    public function getFileInfoByIdentifier($fileIdentifier, array $propertiesToExtract = array())
+    public function getFileInfoByIdentifier($fileIdentifier, array $propertiesToExtract = [])
     {
-        $fileExtensionToMimeTypeMapping = array();
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
         $path = $this->getStreamWrapperPath($fileIdentifier);
+        return $this->extractFileInformation($fileIdentifier, $path, $propertiesToExtract);
+    }
+
+    /**
+     * Extracts information about a file from the filesystem.
+     *
+     * @param string $fileIdentifier The fileIdentifier
+     * @param string $path The path to the file
+     * @param array $propertiesToExtract array of properties which should be returned, if empty all will be extracted
+     * @return array
+     */
+    protected function extractFileInformation(string $fileIdentifier, string $path, array $propertiesToExtract = [])
+    {
+        if (empty($propertiesToExtract)) {
+            $propertiesToExtract = [
+                'size',
+                'atime',
+                'mtime',
+                'ctime',
+                'mimetype',
+                'name',
+                'extension',
+                'identifier',
+                'identifier_hash',
+                'storage',
+                'folder_hash'
+            ];
+        }
+        $fileInformation = [];
+        foreach ($propertiesToExtract as $property) {
+            $fileInformation[$property] = $this->getSpecificFileInformation($fileIdentifier, $path, $property);
+        }
+        return $fileInformation;
+    }
+
+    /**
+     * Extracts a specific FileInformation from the FileSystems.
+     *
+     * @param string $fileIdentifier
+     * @param string $path
+     * @param string $property
+     *
+     * @return bool|int|string
+     * @throws \InvalidArgumentException
+     */
+    public function getSpecificFileInformation(string $fileIdentifier, string $path, string $property)
+    {
+        switch ($property) {
+            case 'size':
+                return (int)filesize($path);
+            case 'atime':
+                return fileatime($path);
+            case 'mtime':
+                return filemtime($path);
+            case 'ctime':
+                return filectime($path);
+            case 'name':
+                return basename($fileIdentifier);
+            case 'extension':
+                return pathinfo($fileIdentifier, PATHINFO_EXTENSION);
+            case 'mimetype':
+                return $this->getFileMimeType($path);
+            case 'identifier':
+                return $fileIdentifier;
+            case 'storage':
+                return $this->storageUid;
+            case 'identifier_hash':
+                return $this->hashIdentifier($fileIdentifier);
+            case 'folder_hash':
+                return $this->hashIdentifier(PathUtility::dirname($fileIdentifier));
+            default:
+                throw new \InvalidArgumentException(
+                    sprintf('The information "%s" is not available.', $property),
+                    1597926187
+                );
+        }
+    }
+
+    /**
+     * @param string $path
+     * @return string
+     */
+    public function getFileMimeType(string $path)
+    {
+        $fileExtensionToMimeTypeMapping = $GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'];
         $lowercaseFileExtension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $mimeType = mimetype_from_extension($lowercaseFileExtension);
 
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SYS'])
-            && array_key_exists('FileInfo', $GLOBALS['TYPO3_CONF_VARS']['SYS'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo'])
-            && array_key_exists('fileExtensionToMimeType', $GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'])
-        ) {
-            $fileExtensionToMimeTypeMapping = $GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'];
+        if ($mimeType === null && !empty($fileExtensionToMimeTypeMapping[$lowercaseFileExtension])) {
+            $mimeType = $fileExtensionToMimeTypeMapping[$lowercaseFileExtension];
         }
 
-        $mimetype = GuzzleHttp\Psr7\mimetype_from_extension($lowercaseFileExtension);
-
-        if ($mimetype === null
-            && array_key_exists($lowercaseFileExtension, $fileExtensionToMimeTypeMapping)
-            && !empty($fileExtensionToMimeTypeMapping[$lowercaseFileExtension])
-        ) {
-            $mimetype = $fileExtensionToMimeTypeMapping[$lowercaseFileExtension];
-        }
-
-            // if a mimetype can't be resolved use application/octet-stream
-            // see http://stackoverflow.com/a/12560996
-            // just returning NULL leads to errors while persisting
-        return array(
-            'name' => basename($fileIdentifier),
-            'identifier' => $fileIdentifier,
-            'ctime' => filectime($path),
-            'mtime' => filemtime($path),
-            'mimetype' => $mimetype !== null ? $mimetype : 'application/octet-stream',
-            'size' => (int) filesize($path),
-            'identifier_hash' => $this->hashIdentifier($fileIdentifier),
-            'folder_hash' => $this->hashIdentifier(TYPO3\CMS\Core\Utility\PathUtility::dirname($fileIdentifier)),
-            'storage' => $this->storageUid
-        );
+        return $mimeType !== null ? $mimeType : 'application/octet-stream';
     }
 
     /**
@@ -891,11 +1014,11 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
     {
         $folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
 
-        return array(
+        return [
             'identifier' => $folderIdentifier,
             'name' => basename($folderIdentifier),
             'storage' => $this->storageUid
-        );
+        ];
     }
 
     /**
@@ -913,14 +1036,28 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      *                     should fall back to "name".
      * @param bool $sortRev TRUE to indicate reverse sorting (last to first)
      * @return array of FileIdentifiers
+     * @throws InvalidPathException
      */
-    public function getFilesInFolder($folderIdentifier, $start = 0, $numberOfItems = 0, $recursive = false, array $filenameFilterCallbacks = array(), $sort = '', $sortRev = false)
-    {
+    public function getFilesInFolder(
+        $folderIdentifier,
+        $start = 0,
+        $numberOfItems = 0,
+        $recursive = false,
+        array $filenameFilterCallbacks = [],
+        $sort = '',
+        $sortRev = false
+    ) {
         if ($start === false && $numberOfItems === false) {
             return [];
         }
 
-        $folderEntries = $this->resolveFolderEntries($folderIdentifier, $recursive, true, false, $filenameFilterCallbacks);
+        $folderEntries = $this->resolveFolderEntries(
+            $folderIdentifier,
+            $recursive,
+            true,
+            false,
+            $filenameFilterCallbacks
+        );
 
         if (!$recursive) {
             $folderEntries = $this->sortFolderEntries($folderEntries, $sort, $sortRev);
@@ -939,6 +1076,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param string $fileName
      * @param string $folderIdentifier
      * @return string file identifier
+     * @throws InvalidPathException
      */
     public function getFileInFolder($fileName, $folderIdentifier)
     {
@@ -960,9 +1098,17 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      *                     should fall back to "name".
      * @param bool $sortRev TRUE to indicate reverse sorting (last to first)
      * @return array of Folder Identifier
+     * @throws InvalidPathException
      */
-    public function getFoldersInFolder($folderIdentifier, $start = 0, $numberOfItems = 0, $recursive = false, array $folderNameFilterCallbacks = array(), $sort = '', $sortRev = false)
-    {
+    public function getFoldersInFolder(
+        $folderIdentifier,
+        $start = 0,
+        $numberOfItems = 0,
+        $recursive = false,
+        array $folderNameFilterCallbacks = [],
+        $sort = '',
+        $sortRev = false
+    ) {
         if ($start === false && $numberOfItems === false) {
             return [];
         }
@@ -1006,8 +1152,9 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param boolean $recursive
      * @param array $filenameFilterCallbacks callbacks for filtering the items
      * @return integer Number of files in folder
+     * @throws InvalidPathException
      */
-    public function countFilesInFolder($folderIdentifier, $recursive = false, array $filenameFilterCallbacks = array())
+    public function countFilesInFolder($folderIdentifier, $recursive = false, array $filenameFilterCallbacks = [])
     {
         return count($this->getFilesInFolder($folderIdentifier, 0, 0, $recursive, $filenameFilterCallbacks));
     }
@@ -1019,8 +1166,9 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param boolean $recursive
      * @param array $folderNameFilterCallbacks callbacks for filtering the items
      * @return integer Number of folders in folder
+     * @throws InvalidPathException
      */
-    public function countFoldersInFolder($folderIdentifier, $recursive = false, array $folderNameFilterCallbacks = array())
+    public function countFoldersInFolder($folderIdentifier, $recursive = false, array $folderNameFilterCallbacks = [])
     {
         return count($this->getFoldersInFolder($folderIdentifier, 0, 0, $recursive, $folderNameFilterCallbacks));
     }
@@ -1028,7 +1176,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
     /**
      * Returns the StreamWrapper path of a file or folder.
      *
-     * @param \TYPO3\CMS\Core\Resource\FileInterface|\TYPO3\CMS\Core\Resource\Folder|string $file
+     * @param FileInterface|Folder|string $file
      * @return string
      * @throws \RuntimeException
      */
@@ -1040,9 +1188,9 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
             $basePath .= '/' . trim($this->configuration['basePath'], '/');
         }
 
-        if ($file instanceof TYPO3\CMS\Core\Resource\FileInterface) {
+        if ($file instanceof FileInterface) {
             $identifier = $file->getIdentifier();
-        } elseif ($file instanceof TYPO3\CMS\Core\Resource\Folder) {
+        } elseif ($file instanceof Folder) {
             $identifier = $file->getIdentifier();
         } elseif (is_string($file)) {
             $identifier = $file;
@@ -1073,21 +1221,29 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
 
     /**
      * @param string $folderIdentifier
-     * @param bool   $recursive
-     * @param bool   $includeFiles
-     * @param bool   $includeDirectories
-     * @param array  $filterMethods
+     * @param bool $recursive
+     * @param bool $includeFiles
+     * @param bool $includeDirectories
+     * @param array $filterMethods
      *
      * @return array
+     * @throws InvalidPathException
      */
-    protected function resolveFolderEntries($folderIdentifier, $recursive = false, $includeFiles = true, $includeDirectories = true, array $filterMethods = [])
-    {
-        $excludedFolders = isset($this->configuration['excludedFolders']) ? $this->configuration['excludedFolders'] : [];
+    protected function resolveFolderEntries(
+        $folderIdentifier,
+        $recursive = false,
+        $includeFiles = true,
+        $includeDirectories = true,
+        array $filterMethods = []
+    ) {
+        $excludedFolders = isset($this->configuration['excludedFolders'])
+            ? $this->configuration['excludedFolders']
+            : [];
         if (in_array($folderIdentifier, $excludedFolders)) {
             return [];
         }
         $cacheFrontend = Cache::getCacheFrontend();
-        $directoryEntries = array();
+        $directoryEntries = [];
         $folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
         $path = $this->getStreamWrapperPath($folderIdentifier);
 
@@ -1141,11 +1297,13 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
             }
             $iterator->next();
             $file = $this->getFileInfoByIdentifier($entry);
-            if(! $this->applyFilterMethodsToDirectoryItem(
-                    $filterMethods,
-                    $file['name'],
-                    $file['identifier'],
-                    $this->getParentFolderIdentifierOfIdentifier($file['identifier']))
+            if (
+            !$this->applyFilterMethodsToDirectoryItem(
+                $filterMethods,
+                $file['name'],
+                $file['identifier'],
+                $this->getParentFolderIdentifierOfIdentifier($file['identifier'])
+            )
             ) {
                 unset($directoryEntries[$entry]);
             }
@@ -1163,11 +1321,15 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      * @param string $itemName
      * @param string $itemIdentifier
      * @param string $parentIdentifier
-     * @throws \RuntimeException
      * @return bool
+     * @throws \RuntimeException
      */
-    protected function applyFilterMethodsToDirectoryItem(array $filterMethods, $itemName, $itemIdentifier, $parentIdentifier)
-    {
+    protected function applyFilterMethodsToDirectoryItem(
+        array $filterMethods,
+        $itemName,
+        $itemIdentifier,
+        $parentIdentifier
+    ) {
         foreach ($filterMethods as $filter) {
             if (is_callable($filter)) {
                 $result = call_user_func($filter, $itemName, $itemIdentifier, $parentIdentifier, [], $this);
@@ -1197,7 +1359,7 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
      */
     protected function sortFolderEntries($folderEntries, $method = '', $reverse = false)
     {
-        $sortableEntries = array();
+        $sortableEntries = [];
 
         foreach ($folderEntries as $key => $identifier) {
             $sortingValue = null;
@@ -1246,13 +1408,13 @@ class AmazonS3Driver extends TYPO3\CMS\Core\Resource\Driver\AbstractHierarchical
     }
 
     /**
-     * @return \TYPO3\CMS\Core\Resource\ResourceStorage
+     * @return ResourceStorage
      */
     protected function getStorage()
     {
         if (!$this->storage) {
-            /** @var $storageRepository \TYPO3\CMS\Core\Resource\StorageRepository */
-            $storageRepository = TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Core\Resource\StorageRepository');
+            /** @var StorageRepository $storageRepository */
+            $storageRepository = GeneralUtility::makeInstance(StorageRepository::class);
             $this->storage = $storageRepository->findByUid($this->storageUid);
         }
 

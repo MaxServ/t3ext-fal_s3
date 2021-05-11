@@ -1,4 +1,5 @@
 <?php
+
 namespace MaxServ\FalS3\MetaData;
 
 /*
@@ -16,9 +17,10 @@ namespace MaxServ\FalS3\MetaData;
 
 use MaxServ\FalS3\Driver\AmazonS3Driver;
 use TYPO3\CMS\Core\Resource\AbstractFile;
-use TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException;
 use TYPO3\CMS\Core\Resource\FileInterface;
+use TYPO3\CMS\Core\Resource\Index\MetaDataRepository;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Type\File\ImageInfo;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -26,44 +28,39 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class RecordMonitor
 {
-
     /**
      * Update the dimension of an image directly after creation
      *
      * @param array $data
-     * @param string $signal
+     * @param string|null $signal
      *
      * @return void
      *
-     * @throws FileDoesNotExistException
      */
     public function recordUpdatedOrCreated(array $data, $signal = null)
     {
         $file = null;
 
         // fetch the file using the $file property in case of a MetaData record
-        if ($signal !== null
+        if (
+            $signal !== null
             && strpos($signal, 'MetaDataRepository') !== false
             && array_key_exists('file', $data)
             && !empty($data['file'])
         ) {
-            $file = ResourceFactory::getInstance()->getFileObject($data['file'], []);
-        } else if (array_key_exists('uid', $data)
+            $file = GeneralUtility::makeInstance(ResourceFactory::class)->getFileObject($data['file'], []);
+        } elseif (
+            array_key_exists('uid', $data)
             && !empty($data['uid'])
         ) {
-            $file = ResourceFactory::getInstance()->getFileObject($data['uid'], $data);
+            $file = GeneralUtility::makeInstance(ResourceFactory::class)->getFileObject($data['uid'], $data);
         }
 
         // break if the file couldn't be fetched or is not an image stored on S3
-        if ($file === null
-            || (
-                $file instanceof FileInterface
-                && $file->getType() !== AbstractFile::FILETYPE_IMAGE
-            )
-            || (
-                $file instanceof FileInterface
-                && $file->getStorage()->getDriverType() !== AmazonS3Driver::DRIVER_KEY
-            )
+        if (
+            $file === null
+            || ($file instanceof FileInterface && $file->getType() !== AbstractFile::FILETYPE_IMAGE)
+            || ($file instanceof FileInterface && $file->getStorage()->getDriverType() !== AmazonS3Driver::DRIVER_KEY)
         ) {
             return;
         }
@@ -74,7 +71,8 @@ class RecordMonitor
         $needsIdentification = true;
 
         // with or height is set skip identification
-        if ($signal !== null
+        if (
+            $signal !== null
             && strpos($signal, 'MetaDataRepository') !== false
             && array_key_exists('width', $data)
             && !empty($data['width'])
@@ -86,8 +84,8 @@ class RecordMonitor
 
         if ($needsIdentification) {
             $temporaryFilePath = $file->getForLocalProcessing(false);
-            $metaDataRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Index\\MetaDataRepository');
-            $imageInfo = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Type\\File\\ImageInfo', $temporaryFilePath);
+            $metaDataRepository = GeneralUtility::makeInstance(MetaDataRepository::class);
+            $imageInfo = GeneralUtility::makeInstance(ImageInfo::class, $temporaryFilePath);
             $additionalMetaInformation = [
                 'width' => $imageInfo->getWidth(),
                 'height' => $imageInfo->getHeight(),

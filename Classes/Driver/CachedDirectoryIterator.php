@@ -1,4 +1,5 @@
 <?php
+
 namespace MaxServ\FalS3\Driver;
 
 /*
@@ -16,6 +17,10 @@ namespace MaxServ\FalS3\Driver;
 
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 
+/**
+ * Class CachedDirectoryIterator
+ * @package MaxServ\FalS3\Driver
+ */
 class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
 {
     /**
@@ -53,6 +58,14 @@ class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
      */
     private $filesAndFolders = [];
 
+    /**
+     * CachedDirectoryIterator constructor.
+     * @param $path
+     * @param $iteratorMode
+     * @param FrontendInterface $cache
+     * @param callable $normalizer
+     * @param callable $filter
+     */
     public function __construct(
         $path,
         $iteratorMode,
@@ -68,6 +81,9 @@ class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
         $this->initialize();
     }
 
+    /**
+     * Initialize CachedDirectoryIterator
+     */
     private function initialize()
     {
         $cacheEntryIdentifier = Cache::buildEntryIdentifier(
@@ -90,41 +106,72 @@ class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
         }
     }
 
+    /**
+     * @param int $position
+     * @see \SeekableIterator::seek()
+     */
     public function seek($position)
     {
         $this->currentIndex = $position;
     }
 
+    /**
+     * @see Iterator::valid()
+     */
     public function valid()
     {
         return isset($this->filesAndFolders[$this->currentIndex]);
     }
 
+    /**
+     * @see Iterator::rewind()
+     */
     public function rewind()
     {
         $this->currentIndex = 0;
     }
 
+    /**
+     * @see Iterator::next()
+     */
     public function next()
     {
         $this->currentIndex++;
     }
 
-    public function hasChildren($allow_links = null)
+    /**
+     * @see \RecursiveIterator::hasChildren()
+     */
+    public function hasChildren()
     {
         return substr($this->filesAndFolders[$this->currentIndex], -1) === '/';
     }
 
+    /**
+     * @see \RecursiveIterator::getChildren()
+     */
     public function getChildren()
     {
-        return new self($this->path . basename($this->filesAndFolders[$this->currentIndex]) . '/', $this->iteratorMode, $this->cache, $this->normalizer, $this->filter);
+        return new self(
+            $this->path . basename($this->filesAndFolders[$this->currentIndex]) . '/',
+            $this->iteratorMode,
+            $this->cache,
+            $this->normalizer,
+            $this->filter
+        );
     }
 
+    /**
+     * @see Iterator::key()
+     */
     public function key()
     {
         return $this->currentIndex;
     }
 
+    /**
+     * @see Iterator::current()
+     */
     public function current()
     {
         return $this->filesAndFolders[$this->currentIndex];
