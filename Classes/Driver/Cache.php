@@ -1,4 +1,5 @@
 <?php
+
 namespace MaxServ\FalS3\Driver;
 
 /*
@@ -14,8 +15,10 @@ namespace MaxServ\FalS3\Driver;
  * The TYPO3 project - inspiring people to share!
  */
 
-use Aws;
-use TYPO3\CMS\Core;
+use Aws\LruArrayCache;
+use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\Cache\Frontend\VariableFrontend;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Class Cache
@@ -27,11 +30,10 @@ use TYPO3\CMS\Core;
  *
  * @package MaxServ\FalS3\Driver
  */
-class Cache extends Aws\LruArrayCache
+class Cache extends LruArrayCache
 {
-
     /**
-     * @var \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend
+     * @var VariableFrontend
      */
     protected static $cacheFrontend;
 
@@ -73,7 +75,7 @@ class Cache extends Aws\LruArrayCache
 
         parent::set($key, $value, $ttl);
 
-        $cacheFrontend->set($entryIdentifier, $value, array(), $ttl);
+        $cacheFrontend->set($entryIdentifier, $value, [], $ttl);
     }
 
     /**
@@ -106,12 +108,15 @@ class Cache extends Aws\LruArrayCache
     }
 
     /**
-     * @return \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend
+     * @return VariableFrontend
      */
     public static function getCacheFrontend()
     {
-        if (self::$cacheFrontend === null && !empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3'])) {
-            $cacheManager = Core\Utility\GeneralUtility::makeInstance(Core\Cache\CacheManager::class);
+        if (
+            self::$cacheFrontend === null
+            && !empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3'])
+        ) {
+            $cacheManager = GeneralUtility::makeInstance(CacheManager::class);
             $cacheManager->setCacheConfigurations($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
             self::$cacheFrontend = $cacheManager->getCache('tx_fal_s3');
         }

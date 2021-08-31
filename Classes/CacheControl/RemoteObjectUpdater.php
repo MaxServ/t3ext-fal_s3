@@ -1,4 +1,5 @@
 <?php
+
 namespace MaxServ\FalS3\CacheControl;
 
 /*
@@ -14,9 +15,19 @@ namespace MaxServ\FalS3\CacheControl;
  * The TYPO3 project - inspiring people to share!
  */
 
-use Aws;
-use MaxServ\FalS3;
-use TYPO3\CMS\Core;
+use Aws\Result;
+use Aws\S3\S3Client;
+use MaxServ\FalS3\Driver\AmazonS3Driver;
+use MaxServ\FalS3\Utility\RemoteObjectUtility;
+use TYPO3\CMS\Core\Resource\AbstractFile;
+use TYPO3\CMS\Core\Resource\Driver\DriverInterface;
+use TYPO3\CMS\Core\Resource\File;
+use TYPO3\CMS\Core\Resource\FileInterface;
+use TYPO3\CMS\Core\Resource\ProcessedFile;
+use TYPO3\CMS\Core\Resource\ProcessedFileRepository;
+use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Resource\Service\FileProcessingService;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Class RemoteObjectUpdater
@@ -29,41 +40,41 @@ class RemoteObjectUpdater
      *
      * @param array $data
      *
-     * @return array Array of passed arguments, single item in it wich is unmodified $data
+     * @return array Array of passed arguments, single item in it which is unmodified $data
      */
     public function onLocalMetadataRecordUpdatedOrCreated(array $data)
     {
         $file = null;
 
         try {
-            $file = Core\Resource\ResourceFactory::getInstance()->getFileObject(
-                $data['file']
-            );
+            $file = GeneralUtility::makeInstance(ResourceFactory::class)->getFileObject($data['file']);
         } catch (\Exception $e) {
             $file = null;
         }
 
-        if ($file->getStorage()->getDriverType() !== FalS3\Driver\AmazonS3Driver::DRIVER_KEY) {
-            return;
-        }
+        if (isset($file)) {
+            if ($file->getStorage()->getDriverType() !== AmazonS3Driver::DRIVER_KEY) {
+                return [$data];
+            }
 
-        $this->updateCacheControlDirectivesForRemoteObject($file);
+            $this->updateCacheControlDirectivesForRemoteObject($file);
 
-        if ($file instanceof Core\Resource\File) {
-            $processedFileRepository = Core\Utility\GeneralUtility::makeInstance(
-                Core\Resource\ProcessedFileRepository::class
-            );
-            if ($processedFileRepository instanceof Core\Resource\ProcessedFileRepository) {
-                $processedFiles = $processedFileRepository->findAllByOriginalFile($file);
-                array_walk(
-                    $processedFiles,
-                    function (Core\Resource\ProcessedFile $processedFile) {
-                        $this->updateCacheControlDirectivesForRemoteObject($processedFile);
-                    }
+            if ($file instanceof File) {
+                $processedFileRepository = GeneralUtility::makeInstance(
+                    ProcessedFileRepository::class
                 );
+                if ($processedFileRepository instanceof ProcessedFileRepository) {
+                    $processedFiles = $processedFileRepository->findAllByOriginalFile($file);
+                    array_walk(
+                        $processedFiles,
+                        function (ProcessedFile $processedFile) {
+                            $this->updateCacheControlDirectivesForRemoteObject($processedFile);
+                        }
+                    );
+                }
             }
         }
-        
+
         return [$data];
     }
 
@@ -74,44 +85,45 @@ class RemoteObjectUpdater
      * the modification time of the remote object. Triggering an index for FAL and
      * using the method above will force updating regardless of the modification time.
      *
-     * @param Core\Resource\Service\FileProcessingService $fileProcessingService
-     * @param Core\Resource\Driver\DriverInterface $driver
-     * @param Core\Resource\ProcessedFile $processedFile
-     * @param Core\Resource\FileInterface $fileObject
+     * @param FileProcessingService $fileProcessingService
+     * @param DriverInterface $driver
+     * @param ProcessedFile $processedFile
+     * @param FileInterface $fileObject
      * @param string $taskType
      * @param array $configuration
      * @return void
      */
     public function onPostFileProcess(
-        Core\Resource\Service\FileProcessingService $fileProcessingService,
-        Core\Resource\Driver\DriverInterface $driver,
-        Core\Resource\ProcessedFile $processedFile,
-        Core\Resource\FileInterface $fileObject,
+        FileProcessingService $fileProcessingService,
+        DriverInterface $driver,
+        ProcessedFile $processedFile,
+        FileInterface $fileObject,
         $taskType,
         array $configuration
     ) {
         $fileInfo = $driver->getFileInfoByIdentifier($processedFile->getIdentifier());
 
-        if (is_array($fileInfo)
+        if (
+            is_array($fileInfo)
             && array_key_exists('mtime', $fileInfo)
-            && (int) $fileInfo['mtime'] > (time() - 30)
+            && (int)$fileInfo['mtime'] > (time() - 30)
         ) {
             $this->updateCacheControlDirectivesForRemoteObject($processedFile);
         }
     }
 
     /**
-     * @param Core\Resource\AbstractFile $file
+     * @param AbstractFile $file
      *
      * @return void
      */
-    protected function updateCacheControlDirectivesForRemoteObject(Core\Resource\AbstractFile $file)
+    protected function updateCacheControlDirectivesForRemoteObject(AbstractFile $file)
     {
         $cacheControl = null;
         $currentResource = null;
 
-        $client = FalS3\Utility\RemoteObjectUtility::resolveClientForStorage($file->getStorage());
-        $driverConfiguration = FalS3\Utility\RemoteObjectUtility::resolveDriverConfigurationForStorage($file->getStorage());
+        $client = RemoteObjectUtility::resolveClientForStorage($file->getStorage());
+        $driverConfiguration = RemoteObjectUtility::resolveDriverConfigurationForStorage($file->getStorage());
 
         $key = '';
 
@@ -121,45 +133,51 @@ class RemoteObjectUpdater
 
         $key .= ltrim($file->getIdentifier(), '/');
 
-        if (is_array($driverConfiguration)
+        if (
+            is_array($driverConfiguration)
             && array_key_exists('bucket', $driverConfiguration)
-            && $client instanceof Aws\S3\S3Client
+            && $client instanceof S3Client
         ) {
             try {
-                $currentResource = $client->headObject(array(
-                  'Bucket' => $driverConfiguration['bucket'],
-                  'Key' => $key
-                ));
+                $currentResource = $client->headObject(
+                    [
+                        'Bucket' => $driverConfiguration['bucket'],
+                        'Key' => $key
+                    ]
+                );
             } catch (\Exception $e) {
-              // fail silently if a file doesn't exist
+                // fail silently if a file doesn't exist
             }
         }
 
-        if ($file instanceof Core\Resource\ProcessedFile) {
-            $cacheControl = FalS3\Utility\RemoteObjectUtility::resolveCacheControlDirectivesForFile(
+        if ($file instanceof ProcessedFile) {
+            $cacheControl = RemoteObjectUtility::resolveCacheControlDirectivesForFile(
                 $file->getOriginalFile(),
                 true
             );
         } else {
-            $cacheControl = FalS3\Utility\RemoteObjectUtility::resolveCacheControlDirectivesForFile($file);
+            $cacheControl = RemoteObjectUtility::resolveCacheControlDirectivesForFile($file);
         }
 
-        if (!empty($cacheControl)
-            && $currentResource instanceof Aws\Result
+        if (
+            !empty($cacheControl)
+            && $currentResource instanceof Result
             && $currentResource->hasKey('Metadata')
             && is_array($currentResource->get('Metadata'))
             && $currentResource->hasKey('CacheControl')
             && strcmp($currentResource->get('CacheControl'), $cacheControl) !== 0
         ) {
-            $client->copyObject(array(
-                'Bucket' => $driverConfiguration['bucket'],
-                'CacheControl' => $cacheControl,
-                'ContentType' => $currentResource->get('ContentType'),
-                'CopySource' => $driverConfiguration['bucket'] . '/' . Aws\S3\S3Client::encodeKey($key),
-                'Key' => $key,
-                'Metadata' => $currentResource->get('Metadata'),
-                'MetadataDirective' => 'REPLACE'
-            ));
+            $client->copyObject(
+                [
+                    'Bucket' => $driverConfiguration['bucket'],
+                    'CacheControl' => $cacheControl,
+                    'ContentType' => $currentResource->get('ContentType'),
+                    'CopySource' => $driverConfiguration['bucket'] . '/' . S3Client::encodeKey($key),
+                    'Key' => $key,
+                    'Metadata' => $currentResource->get('Metadata'),
+                    'MetadataDirective' => 'REPLACE'
+                ]
+            );
         }
     }
 }
