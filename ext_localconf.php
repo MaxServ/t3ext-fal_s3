@@ -116,6 +116,10 @@ call_user_func(function () {
         ];
     }
 
+    // register extractor
+    \TYPO3\CMS\Core\Resource\Index\ExtractorRegistry::getInstance()
+        ->registerExtractionService(\MaxServ\FalS3\Index\Extractor::class);
+
     if (class_exists(\TYPO3\CMS\Core\Information\Typo3Version::class)) {
         $typo3Branch = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
             \TYPO3\CMS\Core\Information\Typo3Version::class
