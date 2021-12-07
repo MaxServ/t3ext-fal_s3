@@ -61,12 +61,10 @@ class Extractor implements ExtractorInterface
      */
     public function extractMetaData(File $file, array $previousExtractedData = []): array
     {
-        if (empty($previousExtractedData['width']) || empty($previousExtractedData['height'])) {
+        if (!array_key_exists('width', $previousExtractedData) || !array_key_exists('height', $previousExtractedData)) {
             $imageDimensions = $this->getImageDimensions($file);
-            if (!empty($imageDimensions)) {
-                $previousExtractedData['width'] = $imageDimensions[0];
-                $previousExtractedData['height'] = $imageDimensions[1];
-            }
+            $previousExtractedData['width'] = $imageDimensions['width'];
+            $previousExtractedData['height'] = $imageDimensions['height'];
         }
 
         return $previousExtractedData;
@@ -76,13 +74,13 @@ class Extractor implements ExtractorInterface
      * @param FileInterface $file
      * @return array
      */
-    public function getImageDimensions(FileInterface $file): ?array
+    public function getImageDimensions(FileInterface $file): array
     {
         $fileNameAndPath = $file->getForLocalProcessing(false);
         $imageInfo = GeneralUtility::makeInstance(ImageInfo::class, $fileNameAndPath);
         return [
-            $imageInfo->getWidth(),
-            $imageInfo->getHeight(),
+            'width' => $imageInfo->getWidth(),
+            'height' => $imageInfo->getHeight(),
         ];
     }
 }
