@@ -316,7 +316,14 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         }
         $path = $this->getStreamWrapperPath($identifier);
 
-        mkdir($path, octdec($GLOBALS['TYPO3_CONF_VARS']['SYS']['folderCreateMask']), $recursive);
+        /**
+         * We do not care about the directory permissions by ourselves, but let the Amazon S3 StreamWrapper for
+         * mkdir decide the correct ACL for the directory. The StreamWrapper will execute decoct() with the
+         * permissions value. If we set it to null or 0, it will output 0 and will go with the default ACL set.
+         * The value null can not be used because it will throw errors when PHP is set to strict types.
+         * @see https://github.com/aws/aws-sdk-php/blob/master/src/S3/StreamWrapper.php#L873-L880
+         */
+        mkdir($path, 0, $recursive);
 
         $this->flushCacheEntriesForFolder($parentFolderIdentifier);
 
@@ -733,7 +740,14 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
 
             // use mkdir to create a new directory instead of copying the resource
             if (substr($sourcePath, -1) === '/') {
-                mkdir($targetPath, octdec($GLOBALS['TYPO3_CONF_VARS']['SYS']['folderCreateMask']), true);
+                /**
+                 * We do not care about the directory permissions by ourselves, but let the Amazon S3 StreamWrapper for
+                 * mkdir decide the correct ACL for the directory. The StreamWrapper will execute decoct() with the
+                 * permissions value. If we set it to null or 0, it will output 0 and will go with the default ACL.
+                 * The value null can not be used because it will throw errors when PHP is set to strict types.
+                 * @see https://github.com/aws/aws-sdk-php/blob/master/src/S3/StreamWrapper.php#L873-L880
+                 */
+                mkdir($targetPath, 0, true);
             } else {
                 copy($sourcePath, $targetPath);
             }
