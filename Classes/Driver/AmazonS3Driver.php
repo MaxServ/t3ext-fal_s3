@@ -185,7 +185,13 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         // Custom client endpoint. If set, apply the custom endpoint
         if (isset($this->configuration['endpoint']) && is_string($this->configuration['endpoint'])) {
             $clientConfiguration['endpoint'] = $this->configuration['endpoint'];
-            $clientConfiguration['use_path_style_endpoint'] = true;
+        }
+
+        if (
+            isset($this->configuration['use_path_style_endpoint'])
+            && is_bool($this->configuration['use_path_style_endpoint'])
+        ) {
+            $clientConfiguration['use_path_style_endpoint'] = $this->configuration['use_path_style_endpoint'];
         }
 
         $this->s3Client = new S3Client($clientConfiguration);
