@@ -113,49 +113,40 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         // next check if the key references to a storageConfiguration for this driver
         // if this storageConfiguration contains the mandatory key, secret and region properties
         // merge the configuration with the local array
-        if (is_array($this->configuration) && array_key_exists('configurationKey', $this->configuration)) {
-            if (
-                isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']])
-                && is_array(
-                    $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]
-                )
-                && array_key_exists(
-                    'key',
-                    $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]
-                )
-                && !empty($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]['key'])
-                && array_key_exists(
-                    'region',
-                    $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]
-                )
-                && !empty($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]['region'])
-                && array_key_exists(
-                    'secret',
-                    $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]
-                )
-                && !empty($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]['secret'])
-            ) {
-                ArrayUtility::mergeRecursiveWithOverrule(
-                    $this->configuration,
-                    $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]
-                );
-                $this->configuration['excludedFolders'] = isset($this->configuration['excludedFolders'])
-                    ? $this->configuration['excludedFolders']
-                    : [];
-            } else {
-                // throw an InvalidConfigurationException to trigger the storage to mark itself as offline
-                throw new InvalidConfigurationException(
-                    'Missing configuration for "' . $this->configuration['configurationKey'] . '"',
-                    1438785908
-                );
-            }
-        } else {
+        if (
+            !is_array($this->configuration) || !array_key_exists('configurationKey', $this->configuration)
+        ) {
             // throw an InvalidConfigurationException to trigger the storage to mark itself as offline
             throw new InvalidConfigurationException(
                 'Unable to resolve a configurationKey for this driver instance',
                 1438785477
             );
         }
+
+        // phpcs:ignore
+        $storageConfiguration = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']];
+
+        // Region may be an empty string for custom endpoints, so we do not want to check empty() on the region setting
+        if (
+            !isset($storageConfiguration['region'])
+            || !is_string($storageConfiguration['region'])
+            || empty($storageConfiguration['key'])
+            || !is_string($storageConfiguration['key'])
+            || empty($storageConfiguration['secret'])
+            || !is_string($storageConfiguration['secret'])
+        ) {
+            // throw an InvalidConfigurationException to trigger the storage to mark itself as offline
+            throw new InvalidConfigurationException(
+                'Missing configuration for "' . $this->configuration['configurationKey'] . '"',
+                1438785908
+            );
+        }
+
+        ArrayUtility::mergeRecursiveWithOverrule($this->configuration, $storageConfiguration);
+
+        $this->configuration['excludedFolders'] = isset($this->configuration['excludedFolders'])
+            ? $this->configuration['excludedFolders']
+            : [];
     }
 
     /**
@@ -163,37 +154,52 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * has been attached.
      *
      * @return void
+     * @throws InvalidConfigurationException
      */
     public function initialize()
     {
         if (
-            is_array($this->configuration)
-            && array_key_exists('key', $this->configuration)
-            && array_key_exists('region', $this->configuration)
-            && array_key_exists('secret', $this->configuration)
+            !isset($this->configuration['region'])
+            || !is_string($this->configuration['region'])
+            || empty($this->configuration['key'])
+            || !is_string($this->configuration['key'])
+            || empty($this->configuration['secret'])
+            || !is_string($this->configuration['secret'])
         ) {
-            $this->s3Client = new S3Client(
-                [
-                    'version' => '2006-03-01',
-                    'region' => $this->configuration['region'],
-                    'credentials' => [
-                        'key' => $this->configuration['key'],
-                        'secret' => $this->configuration['secret']
-                    ]
-                ]
+            // throw an InvalidConfigurationException to trigger the storage to mark itself as offline
+            throw new InvalidConfigurationException(
+                'Missing configuration for "' . $this->configuration['configurationKey'] . '"',
+                1644836749
             );
-
-            // strip the s3 protocol prefix from the bucket name
-            if (strpos($this->configuration['bucket'], 's3://') === 0) {
-                $this->configuration['bucket'] = substr($this->configuration['bucket'], 5);
-            }
-
-            // to prevent collisions between multiple S3 drivers using a stream_wrapper use a unique protocol key
-            $this->configuration['stream_protocol'] = 's3.'
-                . GeneralUtility::shortMD5(self::DRIVER_KEY . '.' . $this->configuration['configurationKey']);
-
-            StreamWrapper::register($this->s3Client, $this->configuration['stream_protocol'], new Cache());
         }
+
+        $clientConfiguration = [
+            'version' => '2006-03-01',
+            'region' => $this->configuration['region'],
+            'credentials' => [
+                'key' => $this->configuration['key'],
+                'secret' => $this->configuration['secret']
+            ]
+        ];
+
+        // Custom client endpoint. If set, apply the custom endpoint
+        if (isset($this->configuration['endpoint']) && is_string($this->configuration['endpoint'])) {
+            $clientConfiguration['endpoint'] = $this->configuration['endpoint'];
+            $clientConfiguration['use_path_style_endpoint'] = true;
+        }
+
+        $this->s3Client = new S3Client($clientConfiguration);
+
+        // strip the s3 protocol prefix from the bucket name
+        if (strpos($this->configuration['bucket'], 's3://') === 0) {
+            $this->configuration['bucket'] = substr($this->configuration['bucket'], 5);
+        }
+
+        // to prevent collisions between multiple S3 drivers using a stream_wrapper use a unique protocol key
+        $this->configuration['stream_protocol'] = 's3.'
+            . GeneralUtility::shortMD5(self::DRIVER_KEY . '.' . $this->configuration['configurationKey']);
+
+        StreamWrapper::register($this->s3Client, $this->configuration['stream_protocol'], new Cache());
     }
 
     /**
