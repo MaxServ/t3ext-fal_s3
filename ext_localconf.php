@@ -120,6 +120,27 @@ call_user_func(function () {
     \TYPO3\CMS\Core\Resource\Index\ExtractorRegistry::getInstance()
         ->registerExtractionService(\MaxServ\FalS3\Index\Extractor::class);
 
+    if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('extractor')) {
+        // phpcs:disable
+        $GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][\Causal\Extractor\Service\Extraction\PhpMetadataExtraction::class] = [
+            'className' => \MaxServ\FalS3\Service\Extraction\PhpMetadataExtraction::class
+        ];
+        $GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][\Causal\Extractor\Service\Extraction\ExifToolMetadataExtraction::class] = [
+            'className' => \MaxServ\FalS3\Service\Extraction\ExifToolMetadataExtraction::class
+        ];
+        $GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][\Causal\Extractor\Service\Extraction\PdfinfoMetadataExtraction::class] = [
+            'className' => \MaxServ\FalS3\Service\Extraction\PdfinfoMetadataExtraction::class
+        ];
+        $GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][\Causal\Extractor\Service\Extraction\TikaMetadataExtraction::class] = [
+            'className' => \MaxServ\FalS3\Service\Extraction\TikaMetadataExtraction::class
+        ];
+        $GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][\Causal\Extractor\Service\Extraction\TikaLanguageDetector::class] = [
+            'className' => \MaxServ\FalS3\Service\Extraction\TikaLanguageDetector::class
+        ];
+        // phpcs:enable
+    }
+
+
     if (class_exists(\TYPO3\CMS\Core\Information\Typo3Version::class)) {
         $typo3Branch = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
             \TYPO3\CMS\Core\Information\Typo3Version::class
