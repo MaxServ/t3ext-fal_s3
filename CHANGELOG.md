@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] - 2022-02-22
+### Added
+- Suggestion for `causal/extractor` extension for extended metadata extraction
+- Override implementations for Extractor classes so these also work with the `AmazonS3Driver`
+
 ## [1.12.1] - 2021-12-30
 ### Fixed
 - mkdir not working reliable with the octdec permissions, let S3 determine the permissions (ACL) inside the StreamWrapper
