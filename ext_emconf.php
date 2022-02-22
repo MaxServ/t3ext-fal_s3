@@ -12,6 +12,9 @@ $EM_CONF[$_EXTKEY] = [
     'constraints' => [
         'depends' => [
             'typo3' => '6.2.12-10.4.99',
+        ],
+        'suggests' => [
+            'extractor' => '2.0.0-2.99.99'
         ]
     ]
 ];
