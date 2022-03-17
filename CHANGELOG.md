@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [UNRELEASED]
+### Added
+- Configuration options for setting `endpoint` and `use_path_style_endpoint` for S3Client
+
+### Changed
+- Minimum PHP version set to v7.0
+
+### Removed
+- Compatibility for TYPO3 v6
+
 ## [1.12.1] - 2021-12-30
 ### Fixed
 - mkdir not working reliable with the octdec permissions, let S3 determine the permissions (ACL) inside the StreamWrapper
