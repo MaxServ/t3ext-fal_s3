@@ -124,7 +124,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         }
 
         // phpcs:ignore
-        $storageConfiguration = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']];
+        $storageConfiguration = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']] ?? [];
 
         // Region may be an empty string for custom endpoints, so we do not want to check empty() on the region setting
         if (
