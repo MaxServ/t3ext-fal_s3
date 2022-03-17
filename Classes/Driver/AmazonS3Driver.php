@@ -144,9 +144,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
 
         ArrayUtility::mergeRecursiveWithOverrule($this->configuration, $storageConfiguration);
 
-        $this->configuration['excludedFolders'] = isset($this->configuration['excludedFolders'])
-            ? $this->configuration['excludedFolders']
-            : [];
+        $this->configuration['excludedFolders'] = $this->configuration['excludedFolders'] ?? [];
     }
 
     /**
@@ -1262,9 +1260,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         $includeDirectories = true,
         array $filterMethods = []
     ) {
-        $excludedFolders = isset($this->configuration['excludedFolders'])
-            ? $this->configuration['excludedFolders']
-            : [];
+        $excludedFolders = $this->configuration['excludedFolders'] ?? [];
         if (in_array($folderIdentifier, $excludedFolders)) {
             return [];
         }
