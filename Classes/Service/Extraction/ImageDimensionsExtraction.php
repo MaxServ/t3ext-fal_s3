@@ -1,6 +1,6 @@
 <?php
 
-namespace MaxServ\FalS3\Index;
+namespace MaxServ\FalS3\Service\Extraction;
 
 use MaxServ\FalS3\Driver\AmazonS3Driver;
 use TYPO3\CMS\Core\Resource\File;
@@ -10,9 +10,9 @@ use TYPO3\CMS\Core\Type\File\ImageInfo;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Class Extractor
+ * Class ImageDimensionsExtraction
  */
-class Extractor implements ExtractorInterface
+class ImageDimensionsExtraction implements ExtractorInterface
 {
 
     /**

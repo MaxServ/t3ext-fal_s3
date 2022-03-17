@@ -8,10 +8,13 @@ $EM_CONF[$_EXTKEY] = [
     'author_email' => 'support@maxserv.com',
     'author_company' => 'MaxServ B.V.',
     'state' => 'stable',
-    'version' => '1.12.1',
+    'version' => '1.13.0',
     'constraints' => [
         'depends' => [
             'typo3' => '7.6.0-10.4.99',
+        ],
+        'suggests' => [
+            'extractor' => '2.0.0-2.99.99'
         ]
     ]
 ];

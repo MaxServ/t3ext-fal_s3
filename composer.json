@@ -34,6 +34,9 @@
     "require-dev": {
         "nimut/testing-framework": "^4.1 || ^5.1"
     },
+    "suggest": {
+        "causal/extractor": "^2.0"
+    },
     "config": {
         "sort-packages": true
     },

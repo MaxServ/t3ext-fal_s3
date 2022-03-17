@@ -845,10 +845,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      */
     public function getFileForLocalProcessing($fileIdentifier, $writable = true)
     {
-        if (isset($this->temporaryFiles[$fileIdentifier])) {
-            return $this->temporaryFiles[$fileIdentifier];
-        }
-
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
         $temporaryFilePath = $this->getTemporaryPathForFile($fileIdentifier);
         $path = $this->getStreamWrapperPath($fileIdentifier);
