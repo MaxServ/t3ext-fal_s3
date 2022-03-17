@@ -1320,12 +1320,12 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
             $iterator->next();
             $file = $this->getFileInfoByIdentifier($entry);
             if (
-            !$this->applyFilterMethodsToDirectoryItem(
-                $filterMethods,
-                $file['name'],
-                $file['identifier'],
-                $this->getParentFolderIdentifierOfIdentifier($file['identifier'])
-            )
+                !$this->applyFilterMethodsToDirectoryItem(
+                    $filterMethods,
+                    $file['name'],
+                    $file['identifier'],
+                    $this->getParentFolderIdentifierOfIdentifier($file['identifier'])
+                )
             ) {
                 unset($directoryEntries[$entry]);
             }
