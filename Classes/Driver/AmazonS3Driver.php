@@ -628,6 +628,10 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
     {
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
         $path = $this->getStreamWrapperPath($fileIdentifier);
+        if (!$this->fileExists($fileIdentifier)) {
+            // The ResourceStorage catches an empty hash and handles
+            return '';
+        }
 
         switch ($hashAlgorithm) {
             case 'sha1':
@@ -840,6 +844,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      *                       have set this flag!
      * @return string The path to the file on the local disk
      * @throws InvalidPathException
+     * @throws \RuntimeException
      */
     public function getFileForLocalProcessing($fileIdentifier, $writable = true)
     {
