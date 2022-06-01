@@ -411,7 +411,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
                 );
 
                 $this->fileExistsCache[$path] = true;
-            } catch (S3Exception $e) {
+            } catch (\Exception $e) {
                 // File does not exist, we might want to mark it as missing
                 $this->fileExistsCache[$path] = false;
             }
