@@ -140,31 +140,20 @@ call_user_func(function () {
         // phpcs:enable
     }
 
-    if (class_exists(\TYPO3\CMS\Core\Information\Typo3Version::class)) {
-        $typo3Branch = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-            \TYPO3\CMS\Core\Information\Typo3Version::class
-        )->getBranch();
-    } else {
-        $typo3Branch = TYPO3_branch;
-    }
+    // Register icon for FalS3 flush cache menu item
+    /** @var \TYPO3\CMS\Core\Imaging\IconRegistry $iconRegistry */
+    $iconRegistry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+        \TYPO3\CMS\Core\Imaging\IconRegistry::class
+    );
 
-    // Adding the ToolbarItem only works on reliable on TYPO3 v8 and higher
-    if (version_compare($typo3Branch, '8.0', '>=')) {
-        // Register icon for FalS3 flush cache menu item
-        /** @var \TYPO3\CMS\Core\Imaging\IconRegistry $iconRegistry */
-        $iconRegistry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-            \TYPO3\CMS\Core\Imaging\IconRegistry::class
-        );
+    $iconRegistry->registerIcon(
+        \MaxServ\FalS3\Toolbar\ToolbarItem::ITEM_ICON_IDENTIFIER,
+        \TYPO3\CMS\Core\Imaging\IconProvider\SvgIconProvider::class,
+        [
+            'source' => 'EXT:fal_s3/Resources/Public/Icons/FlushCache.svg'
+        ]
+    );
 
-        $iconRegistry->registerIcon(
-            \MaxServ\FalS3\Toolbar\ToolbarItem::ITEM_ICON_IDENTIFIER,
-            \TYPO3\CMS\Core\Imaging\IconProvider\SvgIconProvider::class,
-            [
-                'source' => 'EXT:fal_s3/Resources/Public/Icons/FlushCache.svg'
-            ]
-        );
-
-        // Register additional clear cache menu item
-        $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['additionalBackendItems']['cacheActions'][\MaxServ\FalS3\Toolbar\ToolbarItem::ITEM_KEY] = \MaxServ\FalS3\Toolbar\ToolbarItem::class;
-    }
+    // Register additional clear cache menu item
+    $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['additionalBackendItems']['cacheActions'][\MaxServ\FalS3\Toolbar\ToolbarItem::ITEM_KEY] = \MaxServ\FalS3\Toolbar\ToolbarItem::class;
 });
