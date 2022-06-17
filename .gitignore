@@ -1,26 +1,70 @@
-# Ignore several file/path patterns such as IDE specific files
+# Ignore everything by default
+*
+!/.gitattributes
+!/.gitignore
 
-/cgi-bin
-/vendor
-/public
-/Build
-composer.lock
-xcache/
-picture_library/
-plesk-stat/
-xcacheadmin/
-.ssh/
-.idea/
-nbproject/private/
-nbproject/
-**/*.log
-**/*temp_*
-**/*Copy of*
-/.project
-/.buildpath
-/.settings
-/.bash_history
-/.viminfo
-._*
-/atlassian-ide-plugin.xml
-/.php_cs.cache
+# Extension files
+!/composer.json
+!/ext_emconf.php
+!/ext_localconf.php
+!/README.md
+!/CHANGELOG.md
+!/LICENSE
+
+# Configuration
+!/Configuration
+!/Configuration/Backend
+!/Configuration/Backend/*.php
+!/Configuration/FlexForm
+!/Configuration/FlexForm/*.xml
+
+# Documentation
+!/Documentation
+!/Documentation/AdministratorManual
+!/Documentation/AdministratorManual/*.rst
+!/Documentation/Images
+!/Documentation/Images/AdministratorManual
+!/Documentation/Images/AdministratorManual/*.png
+!/Documentation/Introduction
+!/Documentation/Introduction/*.rst
+!/Documentation/Includes.txt
+!/Documentation/Index.rst
+!/Documentation/Settings.yml
+
+# Resources
+!/Resources
+!/Resources/Private
+!/Resources/Private/Language
+!/Resources/Private/Language/*.xlf
+!/Resources/Public
+!/Resources/Public/Icons
+!/Resources/Public/Icons/*.svg
+
+# PHP
+!/Classes
+!/Classes/CacheControl
+!/Classes/CacheControl/*.php
+!/Classes/Controller
+!/Classes/Controller/*.php
+!/Classes/Driver
+!/Classes/Driver/*.php
+!/Classes/MetaData
+!/Classes/MetaData/*.php
+!/Classes/Processing
+!/Classes/Processing/*.php
+!/Classes/Service
+!/Classes/Service/Extraction
+!/Classes/Service/Extraction/*.php
+!/Classes/Toolbar
+!/Classes/Toolbar/*.php
+!/Classes/Utility
+!/Classes/Utility/*.php
+
+# Tests
+!/Tests
+!/Tests/Unit
+!/Tests/Unit/Driver
+!/Tests/Unit/Driver/*.php
+
+# Build
+!/.travis.yml
