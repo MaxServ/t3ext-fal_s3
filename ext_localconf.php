@@ -117,7 +117,7 @@ call_user_func(function () {
     }
 
     // register extractor
-    \TYPO3\CMS\Core\Resource\Index\ExtractorRegistry::getInstance()
+    \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Resource\Index\ExtractorRegistry::class)
         ->registerExtractionService(\MaxServ\FalS3\Service\Extraction\ImageDimensionsExtraction::class);
 
     if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('extractor')) {
