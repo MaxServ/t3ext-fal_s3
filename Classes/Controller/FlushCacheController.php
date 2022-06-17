@@ -2,11 +2,11 @@
 
 namespace MaxServ\FalS3\Controller;
 
+use MaxServ\FalS3\Driver\Cache;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException;
 use TYPO3\CMS\Core\Http\Response;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Class FlushCacheController
@@ -19,11 +19,11 @@ class FlushCacheController
      *
      * @param ServerRequestInterface $request the current request
      * @return ResponseInterface
-     * @throws \TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException
+     * @throws NoSuchCacheException
      */
     public function flushCache(ServerRequestInterface $request)
     {
-        $cacheFrontend = GeneralUtility::makeInstance(CacheManager::class)->getCache('tx_fal_s3');
+        $cacheFrontend = Cache::getCacheFrontend();
         $cacheFrontend->flush();
 
         return new Response();
