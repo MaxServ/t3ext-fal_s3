@@ -17,6 +17,7 @@ namespace MaxServ\FalS3\Driver;
 
 use Aws\S3\S3Client;
 use Aws\S3\StreamWrapper;
+use GuzzleHttp\Psr7\MimeType;
 use TYPO3\CMS\Core\Resource\Driver\AbstractHierarchicalFilesystemDriver;
 use TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException;
 use TYPO3\CMS\Core\Resource\Exception\InvalidPathException;
@@ -27,8 +28,6 @@ use TYPO3\CMS\Core\Resource\StorageRepository;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
-
-use function GuzzleHttp\Psr7\mimetype_from_extension;
 
 /**
  * Class AmazonS3Driver
@@ -997,7 +996,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
     {
         $fileExtensionToMimeTypeMapping = $GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'];
         $lowercaseFileExtension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-        $mimeType = mimetype_from_extension($lowercaseFileExtension);
+        $mimeType = MimeType::fromExtension($lowercaseFileExtension);
 
         if ($mimeType === null && !empty($fileExtensionToMimeTypeMapping[$lowercaseFileExtension])) {
             $mimeType = $fileExtensionToMimeTypeMapping[$lowercaseFileExtension];
