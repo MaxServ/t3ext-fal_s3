@@ -17,14 +17,12 @@ namespace MaxServ\FalS3\Utility;
 
 use Aws\S3\S3Client;
 use Aws\S3\S3ClientInterface;
-use MaxServ\FalS3;
 use MaxServ\FalS3\Driver\AmazonS3Driver;
 use TYPO3\CMS\Core\Resource\AbstractFile;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
 
 /**
  * Class RemoteObjectUtility
- * @package MaxServ\FalS3\Utility
  */
 class RemoteObjectUtility
 {

@@ -140,7 +140,6 @@ call_user_func(function () {
         // phpcs:enable
     }
 
-
     if (class_exists(\TYPO3\CMS\Core\Information\Typo3Version::class)) {
         $typo3Branch = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
             \TYPO3\CMS\Core\Information\Typo3Version::class

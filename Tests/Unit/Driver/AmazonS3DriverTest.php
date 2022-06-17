@@ -22,7 +22,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Class AmazonS3DriverTest
- * @package MaxServ\FalS3\Tests\Unit\Driver
  */
 class AmazonS3DriverTest extends UnitTestCase
 {

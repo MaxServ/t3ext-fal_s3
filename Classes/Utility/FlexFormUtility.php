@@ -17,14 +17,11 @@ namespace MaxServ\FalS3\Utility;
 
 /**
  * Class FlexFormUtility
- *
- * @package MaxServ\FalS3\Utility
  */
 class FlexFormUtility
 {
     /**
      * @param array $parameters
-     * @return void
      */
     public function getStorageConfigurations(array $parameters)
     {

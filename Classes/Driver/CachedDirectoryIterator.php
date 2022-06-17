@@ -19,7 +19,6 @@ use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 
 /**
  * Class CachedDirectoryIterator
- * @package MaxServ\FalS3\Driver
  */
 class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
 {

@@ -27,8 +27,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * to prevent excessive S3 API calls a simple file is stored
  * locally, using some kind of memory based backend could
  * improve performance even more.
- *
- * @package MaxServ\FalS3\Driver
  */
 class Cache extends LruArrayCache
 {
@@ -64,8 +62,6 @@ class Cache extends LruArrayCache
      * @param string $key Key to set
      * @param mixed $value Value to set.
      * @param int $ttl In seconds, 0 = unlimited
-     *
-     * @return void
      */
     public function set($key, $value, $ttl = 0)
     {
@@ -82,8 +78,6 @@ class Cache extends LruArrayCache
      * Remove a cache key.
      *
      * @param string $key Key to remove.
-     *
-     * @return void
      */
     public function remove($key)
     {

@@ -11,7 +11,9 @@ $EM_CONF[$_EXTKEY] = [
     'version' => '1.13.0',
     'constraints' => [
         'depends' => [
-            'typo3' => '6.2.12-10.4.99',
+            'typo3' => '8.7.0-11.5.99',
+            'backend' => '8.7.0-11.5.99',
+            'extbase' => '8.7.0-11.5.99',
         ],
         'suggests' => [
             'extractor' => '2.0.0-2.99.99'

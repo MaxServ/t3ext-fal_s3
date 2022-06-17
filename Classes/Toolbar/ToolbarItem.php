@@ -10,12 +10,11 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Class ToolbarItem
- * @package MaxServ\FalS3\Toolbar
  */
 class ToolbarItem implements ClearCacheActionsHookInterface
 {
-    const ITEM_KEY = 'flushFalS3Cache';
-    const ITEM_ICON_IDENTIFIER = 'tx_fal_s3_flushcache';
+    public const ITEM_KEY = 'flushFalS3Cache';
+    public const ITEM_ICON_IDENTIFIER = 'tx_fal_s3_flushcache';
 
     /**
      * Adds the flush Fal S3 cache menu item

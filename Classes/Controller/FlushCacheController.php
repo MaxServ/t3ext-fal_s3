@@ -10,7 +10,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Class FlushCacheController
- * @package MaxServ\FalS3\Controller
  */
 class FlushCacheController
 {

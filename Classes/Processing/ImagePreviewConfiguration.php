@@ -25,20 +25,18 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Class ImagePreviewConfiguration
- *
- * @package MaxServ\FalS3\Processing
  */
 class ImagePreviewConfiguration
 {
     /**
      * @var int
      */
-    const DEFAULT_PREVIEW_WIDTH = 64;
+    public const DEFAULT_PREVIEW_WIDTH = 64;
 
     /**
      * @var int
      */
-    const DEFAULT_PREVIEW_HEIGHT = 64;
+    public const DEFAULT_PREVIEW_HEIGHT = 64;
 
     /**
      * To avoid a miss when looking up a processed (preview) file try again with default configuration.
@@ -53,7 +51,6 @@ class ImagePreviewConfiguration
      * @param FileInterface $fileObject
      * @param string $taskType
      * @param array $configuration
-     * @return void
      */
     public function onPreFileProcess(
         FileProcessingService $fileProcessingService,
@@ -108,9 +105,9 @@ class ImagePreviewConfiguration
      */
     protected static function isDefaultPreviewConfiguration(array $configuration)
     {
-        return (count($configuration) === 2
+        return count($configuration) === 2
             && $configuration['width'] === self::DEFAULT_PREVIEW_WIDTH
             && $configuration['height'] === self::DEFAULT_PREVIEW_HEIGHT
-        );
+        ;
     }
 }

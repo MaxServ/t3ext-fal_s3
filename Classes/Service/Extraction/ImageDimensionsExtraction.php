@@ -14,7 +14,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class ImageDimensionsExtraction implements ExtractorInterface
 {
-
     /**
      * @inheritDoc
      */

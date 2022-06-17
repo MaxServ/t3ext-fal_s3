@@ -23,9 +23,6 @@ use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Type\File\ImageInfo;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-/**
- * @package MaxServ\FalS3\MetaData
- */
 class RecordMonitor
 {
     /**
@@ -33,9 +30,6 @@ class RecordMonitor
      *
      * @param array $data
      * @param string|null $signal
-     *
-     * @return void
-     *
      */
     public function recordUpdatedOrCreated(array $data, $signal = null)
     {

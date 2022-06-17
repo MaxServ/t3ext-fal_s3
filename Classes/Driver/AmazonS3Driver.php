@@ -32,15 +32,13 @@ use function GuzzleHttp\Psr7\mimetype_from_extension;
 
 /**
  * Class AmazonS3Driver
- *
- * @package MaxServ\FalS3\Driver
  */
 class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
 {
     /**
      * @var string
      */
-    const DRIVER_KEY = 'MaxServ.FalS3';
+    public const DRIVER_KEY = 'MaxServ.FalS3';
 
     /**
      * @var S3Client
@@ -89,8 +87,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
 
     /**
      * Remove all temporary created files when the object is destroyed.
-     *
-     * @return void
      */
     public function __destruct()
     {
@@ -104,7 +100,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
     /**
      * Processes the configuration for this driver.
      *
-     * @return void
      * @throws InvalidConfigurationException
      */
     public function processConfiguration()
@@ -161,8 +156,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
     /**
      * Initializes this object. This is called by the storage after the driver
      * has been attached.
-     *
-     * @return void
      */
     public function initialize()
     {
@@ -874,7 +867,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      *
      * @param string $identifier
      *
-     * @return void
      * @throws InvalidPathException
      */
     public function dumpFileContents($identifier)
@@ -1159,9 +1151,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * Returns the number of files inside the specified path
      *
      * @param string $folderIdentifier
-     * @param boolean $recursive
+     * @param bool $recursive
      * @param array $filenameFilterCallbacks callbacks for filtering the items
-     * @return integer Number of files in folder
+     * @return int Number of files in folder
      * @throws InvalidPathException
      */
     public function countFilesInFolder($folderIdentifier, $recursive = false, array $filenameFilterCallbacks = [])
@@ -1173,9 +1165,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      * Returns the number of folders inside the specified path
      *
      * @param string $folderIdentifier
-     * @param boolean $recursive
+     * @param bool $recursive
      * @param array $folderNameFilterCallbacks callbacks for filtering the items
-     * @return integer Number of folders in folder
+     * @return int Number of folders in folder
      * @throws InvalidPathException
      */
     public function countFoldersInFolder($folderIdentifier, $recursive = false, array $folderNameFilterCallbacks = [])
@@ -1441,8 +1433,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
 
     /**
      * @param string $folderIdentifier
-     *
-     * @return void
      */
     protected function flushCacheEntriesForFolder($folderIdentifier)
     {

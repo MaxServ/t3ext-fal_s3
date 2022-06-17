@@ -31,7 +31,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Class RemoteObjectUpdater
- * @package MaxServ\FalS3\CacheControl
  */
 class RemoteObjectUpdater
 {
@@ -91,7 +90,6 @@ class RemoteObjectUpdater
      * @param FileInterface $fileObject
      * @param string $taskType
      * @param array $configuration
-     * @return void
      */
     public function onPostFileProcess(
         FileProcessingService $fileProcessingService,
@@ -114,8 +112,6 @@ class RemoteObjectUpdater
 
     /**
      * @param AbstractFile $file
-     *
-     * @return void
      */
     protected function updateCacheControlDirectivesForRemoteObject(AbstractFile $file)
     {
