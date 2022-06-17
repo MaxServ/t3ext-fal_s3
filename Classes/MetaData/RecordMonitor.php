@@ -17,6 +17,7 @@ namespace MaxServ\FalS3\MetaData;
 
 use MaxServ\FalS3\Driver\AmazonS3Driver;
 use TYPO3\CMS\Core\Resource\AbstractFile;
+use TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException;
 use TYPO3\CMS\Core\Resource\FileInterface;
 use TYPO3\CMS\Core\Resource\Index\MetaDataRepository;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
@@ -33,6 +34,7 @@ class RecordMonitor
      *
      * @param array $data
      * @param string|null $signal
+     * @throws FileDoesNotExistException
      */
     public function recordUpdatedOrCreated(array $data, $signal = null)
     {
