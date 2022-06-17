@@ -17,6 +17,7 @@
 !/Configuration/Backend/*.php
 !/Configuration/FlexForm
 !/Configuration/FlexForm/*.xml
+!/Configuration/Icons.php
 
 # Documentation
 !/Documentation
