@@ -182,7 +182,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
 
             // to prevent collisions between multiple S3 drivers using a stream_wrapper use a unique protocol key
             $this->configuration['stream_protocol'] = 's3.'
-                . GeneralUtility::shortMD5(self::DRIVER_KEY . '.' . $this->configuration['configurationKey']);
+                . md5(self::DRIVER_KEY . '.' . $this->configuration['configurationKey']);
 
             StreamWrapper::register($this->s3Client, $this->configuration['stream_protocol'], new Cache());
         }
