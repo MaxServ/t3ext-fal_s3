@@ -62,8 +62,8 @@ class ImagePreviewConfiguration
     ) {
         if (
             $taskType === ProcessedFile::CONTEXT_IMAGEPREVIEW
-            && $processedFile->isNew()
             && empty($configuration)
+            && $processedFile->isNew()
             && self::isDefaultPreviewConfiguration($processedFile->getProcessingConfiguration())
         ) {
             /** @var ProcessedFileRepository $processedFileRepository */
@@ -83,9 +83,9 @@ class ImagePreviewConfiguration
 
             // if an existing file exists update the processed file passed to this slot
             if (
-                $existingProcessedFile instanceof ProcessedFile
+                $fileObject instanceof File
+                && $existingProcessedFile instanceof ProcessedFile
                 && $existingProcessedFile->isProcessed()
-                && $fileObject instanceof File
             ) {
                 // basically $processedFile->reconstituteFromDatabaseRecord($databaseRow) would be sufficient,
                 // but since that method is protected use the next best (and dirtiest) thing

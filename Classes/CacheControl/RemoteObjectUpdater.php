@@ -43,8 +43,6 @@ class RemoteObjectUpdater
      */
     public function onLocalMetadataRecordUpdatedOrCreated(array $data)
     {
-        $file = null;
-
         try {
             $file = GeneralUtility::makeInstance(ResourceFactory::class)->getFileObject($data['file']);
         } catch (\Exception $e) {
@@ -115,7 +113,6 @@ class RemoteObjectUpdater
      */
     protected function updateCacheControlDirectivesForRemoteObject(AbstractFile $file)
     {
-        $cacheControl = null;
         $currentResource = null;
 
         $client = RemoteObjectUtility::resolveClientForStorage($file->getStorage());

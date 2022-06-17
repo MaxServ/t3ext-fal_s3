@@ -106,12 +106,12 @@ class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
     }
 
     /**
-     * @param int $position
+     * @param int $offset
      * @see \SeekableIterator::seek()
      */
-    public function seek($position)
+    public function seek($offset)
     {
-        $this->currentIndex = $position;
+        $this->currentIndex = $offset;
     }
 
     /**

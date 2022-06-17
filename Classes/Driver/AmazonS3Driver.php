@@ -24,6 +24,7 @@ use TYPO3\CMS\Core\Resource\Exception\InvalidPathException;
 use TYPO3\CMS\Core\Resource\FileInterface;
 use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
+use TYPO3\CMS\Core\Resource\ResourceStorageInterface;
 use TYPO3\CMS\Core\Resource\StorageRepository;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -79,9 +80,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
     {
         parent::__construct($configuration);
 
-        $this->capabilities = ResourceStorage::CAPABILITY_BROWSABLE |
-            ResourceStorage::CAPABILITY_PUBLIC |
-            ResourceStorage::CAPABILITY_WRITABLE;
+        $this->capabilities = ResourceStorageInterface::CAPABILITY_BROWSABLE |
+            ResourceStorageInterface::CAPABILITY_PUBLIC |
+            ResourceStorageInterface::CAPABILITY_WRITABLE;
     }
 
     /**
@@ -133,9 +134,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
                     $this->configuration,
                     $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$this->configuration['configurationKey']]
                 );
-                $this->configuration['excludedFolders'] = isset($this->configuration['excludedFolders'])
-                    ? $this->configuration['excludedFolders']
-                    : [];
+                $this->configuration['excludedFolders'] = $this->configuration['excludedFolders'] ?? [];
             } else {
                 // throw an InvalidConfigurationException to trigger the storage to mark itself as offline
                 throw new InvalidConfigurationException(
@@ -229,7 +228,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
             }
         }
 
-        return $defaultFolder !== null ? $defaultFolder : $this->getRootLevelFolder();
+        return $defaultFolder ?? $this->getRootLevelFolder();
     }
 
     /**
@@ -299,13 +298,12 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
 
         if ($recursive === false) {
             $newFolderName = $this->sanitizeFileName($newFolderName);
-            $identifier = $parentFolderIdentifier . $newFolderName . '/';
         } else {
             $parts = GeneralUtility::trimExplode('/', $newFolderName);
             $parts = array_map([$this, 'sanitizeFileName'], $parts);
             $newFolderName = implode('/', $parts);
-            $identifier = $parentFolderIdentifier . $newFolderName . '/';
         }
+        $identifier = $parentFolderIdentifier . $newFolderName . '/';
         $path = $this->getStreamWrapperPath($identifier);
 
         /**
@@ -892,9 +890,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         $folderIdentifier = $this->canonicalizeAndCheckFileIdentifier($folderIdentifier);
         $identifier = $this->canonicalizeAndCheckFileIdentifier($identifier);
         return $folderIdentifier === $identifier
-            || ($folderIdentifier !== $identifier
-                && $folderIdentifier !== ''
-                && strpos($identifier, $folderIdentifier) === 0);
+            || ($folderIdentifier !== '' && strpos($identifier, $folderIdentifier) === 0);
     }
 
     /**
@@ -1002,7 +998,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
             $mimeType = $fileExtensionToMimeTypeMapping[$lowercaseFileExtension];
         }
 
-        return $mimeType !== null ? $mimeType : 'application/octet-stream';
+        return $mimeType ?? 'application/octet-stream';
     }
 
     /**
@@ -1237,10 +1233,8 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         $includeDirectories = true,
         array $filterMethods = []
     ) {
-        $excludedFolders = isset($this->configuration['excludedFolders'])
-            ? $this->configuration['excludedFolders']
-            : [];
-        if (in_array($folderIdentifier, $excludedFolders)) {
+        $excludedFolders = $this->configuration['excludedFolders'] ?? [];
+        if (in_array($folderIdentifier, $excludedFolders, true)) {
             return [];
         }
         $cacheFrontend = Cache::getCacheFrontend();
@@ -1299,12 +1293,12 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
             $iterator->next();
             $file = $this->getFileInfoByIdentifier($entry);
             if (
-            !$this->applyFilterMethodsToDirectoryItem(
-                $filterMethods,
-                $file['name'],
-                $file['identifier'],
-                $this->getParentFolderIdentifierOfIdentifier($file['identifier'])
-            )
+                !$this->applyFilterMethodsToDirectoryItem(
+                    $filterMethods,
+                    $file['name'],
+                    $file['identifier'],
+                    $this->getParentFolderIdentifierOfIdentifier($file['identifier'])
+                )
             ) {
                 unset($directoryEntries[$entry]);
             }
@@ -1333,7 +1327,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
     ) {
         foreach ($filterMethods as $filter) {
             if (is_callable($filter)) {
-                $result = call_user_func($filter, $itemName, $itemIdentifier, $parentIdentifier, [], $this);
+                $result = $filter($itemName, $itemIdentifier, $parentIdentifier, [], $this);
                 // We have to use -1 as the „don't include“ return value, as call_user_func() will return FALSE
                 // If calling the method succeeded and thus we can't use that as a return value.
                 if ($result === -1) {
@@ -1362,7 +1356,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
     {
         $sortableEntries = [];
 
-        foreach ($folderEntries as $key => $identifier) {
+        foreach ($folderEntries as $identifier) {
             $sortingValue = null;
 
             if ($method === 'fileext') {
@@ -1374,8 +1368,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
                 // the underlying might allow more than a user in TYPO3
                 $permissions = $this->getPermissions($identifier);
 
-                $sortingValue = '';
-                $sortingValue .= ($permissions['r'] ? 'R' : '');
+                $sortingValue = ($permissions['r'] ? 'R' : '');
                 $sortingValue .= ($permissions['w'] ? 'W' : '');
             }
 

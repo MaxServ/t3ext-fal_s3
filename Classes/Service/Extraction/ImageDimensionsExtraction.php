@@ -3,6 +3,7 @@
 namespace MaxServ\FalS3\Service\Extraction;
 
 use MaxServ\FalS3\Driver\AmazonS3Driver;
+use TYPO3\CMS\Core\Resource\AbstractFile;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\FileInterface;
 use TYPO3\CMS\Core\Resource\Index\ExtractorInterface;
@@ -19,7 +20,7 @@ class ImageDimensionsExtraction implements ExtractorInterface
      */
     public function getFileTypeRestrictions(): array
     {
-        return [File::FILETYPE_IMAGE];
+        return [AbstractFile::FILETYPE_IMAGE];
     }
 
     /**
@@ -51,7 +52,7 @@ class ImageDimensionsExtraction implements ExtractorInterface
      */
     public function canProcess(File $file): bool
     {
-        return $file->getType() === File::FILETYPE_IMAGE
+        return $file->getType() === AbstractFile::FILETYPE_IMAGE
             && $file->getStorage()->getDriverType() === AmazonS3Driver::DRIVER_KEY;
     }
 

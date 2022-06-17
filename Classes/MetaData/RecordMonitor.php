@@ -23,6 +23,9 @@ use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Type\File\ImageInfo;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
+/**
+ * Class RecordMonitor
+ */
 class RecordMonitor
 {
     /**
@@ -38,9 +41,9 @@ class RecordMonitor
         // fetch the file using the $file property in case of a MetaData record
         if (
             $signal !== null
-            && strpos($signal, 'MetaDataRepository') !== false
             && array_key_exists('file', $data)
             && !empty($data['file'])
+            && strpos($signal, 'MetaDataRepository') !== false
         ) {
             $file = GeneralUtility::makeInstance(ResourceFactory::class)->getFileObject($data['file'], []);
         } elseif (
@@ -67,11 +70,11 @@ class RecordMonitor
         // with or height is set skip identification
         if (
             $signal !== null
-            && strpos($signal, 'MetaDataRepository') !== false
             && array_key_exists('width', $data)
             && !empty($data['width'])
             && array_key_exists('height', $data)
             && !empty($data['height'])
+            && strpos($signal, 'MetaDataRepository') !== false
         ) {
             $needsIdentification = false;
         }
