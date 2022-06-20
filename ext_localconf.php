@@ -63,6 +63,23 @@ call_user_func(function () {
             \TYPO3\CMS\Extbase\SignalSlot\Dispatcher::class
         );
 
+        /*
+         * In https://github.com/TYPO3/TYPO3.CMS/blob/v8.7.9/typo3/sysext/filelist/Classes/FileList.php#L742 a
+         * processed file for a preview thumbnail uses an empty configuration array whereas 64x64 is stored in the
+         * database and causes a miss and a thumbnail being generated over and over.
+         *
+         * @deprecated This signal slot is only necessary for TYPO# v8, because in TYPO3 v9+ the dimensions are
+         * passed from within the configuration
+         */
+        if (version_compare($typo3Branch, '9.0', '<')) {
+            $signalSlotDispatcher->connect(
+                \TYPO3\CMS\Core\Resource\ResourceStorage::class,
+                'preFileProcess',
+                \MaxServ\FalS3\Processing\ImagePreviewConfiguration::class,
+                'onPreFileProcess'
+            );
+        }
+
         $signalSlotDispatcher->connect(
             \TYPO3\CMS\Core\Resource\Index\FileIndexRepository::class,
             'recordUpdated',
@@ -89,13 +106,6 @@ call_user_func(function () {
             'recordCreated',
             \MaxServ\FalS3\MetaData\RecordMonitor::class,
             'recordUpdatedOrCreated'
-        );
-
-        $signalSlotDispatcher->connect(
-            \TYPO3\CMS\Core\Resource\ResourceStorage::class,
-            'preFileProcess',
-            \MaxServ\FalS3\Processing\ImagePreviewConfiguration::class,
-            'onPreFileProcess'
         );
 
         // cache control, trigger an update of remote objects if a change is made locally (eg. by running the scheduler)
