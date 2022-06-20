@@ -1335,6 +1335,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
             }
             $iterator->next();
             $file = $this->getFileInfoByIdentifier($entry);
+            if (empty($file)) {
+                continue;
+            }
             if (
                 !$this->applyFilterMethodsToDirectoryItem(
                     $filterMethods,
