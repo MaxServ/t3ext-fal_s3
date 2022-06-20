@@ -1,6 +1,8 @@
 <?php
 
-namespace MaxServ\FalS3\CacheControl;
+declare(strict_types=1);
+
+namespace MaxServ\FalS3\Resource\Event;
 
 /*
  * This file is part of the TYPO3 CMS project.
@@ -21,6 +23,9 @@ use MaxServ\FalS3\Driver\AmazonS3Driver;
 use MaxServ\FalS3\Utility\RemoteObjectUtility;
 use TYPO3\CMS\Core\Resource\AbstractFile;
 use TYPO3\CMS\Core\Resource\Driver\DriverInterface;
+use TYPO3\CMS\Core\Resource\Event\AfterFileMetaDataCreatedEvent;
+use TYPO3\CMS\Core\Resource\Event\AfterFileMetaDataUpdatedEvent;
+use TYPO3\CMS\Core\Resource\Event\AfterFileProcessingEvent;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\FileInterface;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
@@ -30,46 +35,52 @@ use TYPO3\CMS\Core\Resource\Service\FileProcessingService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Class RemoteObjectUpdater
+ * Class RemoteObjectUpdateEvent
  */
-class RemoteObjectUpdater
+class RemoteObjectUpdateEvent
 {
+    /**
+     * PSR-14 Event listener
+     * @param AfterFileMetaDataCreatedEvent $event
+     */
+    public function afterFileMetaDataCreated(AfterFileMetaDataCreatedEvent $event): void
+    {
+        $this->updateRemoteCacheDirectiveForFile($event->getFileUid());
+    }
+
+    /**
+     * PSR-14 Event listener
+     * @param AfterFileMetaDataUpdatedEvent $event
+     */
+    public function afterFileMetaDataUpdated(AfterFileMetaDataUpdatedEvent $event): void
+    {
+        $this->updateRemoteCacheDirectiveForFile($event->getFileUid());
+    }
+
+    /**
+     * PSR-14 Event listener
+     * @param AfterFileProcessingEvent $event
+     */
+    public function afterFileProcessing(AfterFileProcessingEvent $event): void
+    {
+        $fileInfo = $event->getDriver()->getFileInfoByIdentifier($event->getProcessedFile()->getIdentifier());
+        if ($this->remoteObjectNeedsUpdate($fileInfo)) {
+            $this->updateCacheControlDirectivesForRemoteObject($event->getProcessedFile());
+        }
+    }
+
     /**
      * Update the dimension of an image directly after creation
      *
      * @param array $data
-     *
      * @return array Array of passed arguments, single item in it which is unmodified $data
+     * @deprecated Since TYPO3 v10.2, core uses PSR-14 events. This signal slot is only being used in TYPO3 v8 and v9.
      */
     public function onLocalMetadataRecordUpdatedOrCreated(array $data)
     {
-        try {
-            $file = GeneralUtility::makeInstance(ResourceFactory::class)->getFileObject($data['file']);
-        } catch (\Exception $e) {
-            $file = null;
-        }
-
-        if (isset($file)) {
-            if ($file->getStorage()->getDriverType() !== AmazonS3Driver::DRIVER_KEY) {
-                return [$data];
-            }
-
-            $this->updateCacheControlDirectivesForRemoteObject($file);
-
-            if ($file instanceof File) {
-                $processedFileRepository = GeneralUtility::makeInstance(
-                    ProcessedFileRepository::class
-                );
-                if ($processedFileRepository instanceof ProcessedFileRepository) {
-                    $processedFiles = $processedFileRepository->findAllByOriginalFile($file);
-                    array_walk(
-                        $processedFiles,
-                        function (ProcessedFile $processedFile) {
-                            $this->updateCacheControlDirectivesForRemoteObject($processedFile);
-                        }
-                    );
-                }
-            }
+        $fileUid = (int)($data['file'] ?? 0);
+        if ($fileUid > 0) {
+            $this->updateRemoteCacheDirectiveForFile($fileUid);
         }
 
         return [$data];
@@ -88,6 +99,7 @@ class RemoteObjectUpdater
      * @param FileInterface $fileObject
      * @param string $taskType
      * @param array $configuration
+     * @deprecated Since TYPO3 v10.2, core uses PSR-14 events. This signal slot is only being used in TYPO3 v8 and v9.
      */
     public function onPostFileProcess(
         FileProcessingService $fileProcessingService,
@@ -98,20 +110,56 @@ class RemoteObjectUpdater
         array $configuration
     ) {
         $fileInfo = $driver->getFileInfoByIdentifier($processedFile->getIdentifier());
-
-        if (
-            is_array($fileInfo)
-            && array_key_exists('mtime', $fileInfo)
-            && (int)$fileInfo['mtime'] > (time() - 30)
-        ) {
+        if ($this->remoteObjectNeedsUpdate($fileInfo)) {
             $this->updateCacheControlDirectivesForRemoteObject($processedFile);
+        }
+    }
+
+    /**
+     * @param array $fileInfo
+     * @return bool
+     */
+    protected function remoteObjectNeedsUpdate(array $fileInfo): bool
+    {
+        return array_key_exists('mtime', $fileInfo) && (int)$fileInfo['mtime'] > (time() - 30);
+    }
+
+    /**
+     * @param int $fileUid
+     */
+    protected function updateRemoteCacheDirectiveForFile(int $fileUid): void
+    {
+        try {
+            $file = GeneralUtility::makeInstance(ResourceFactory::class)->getFileObject($fileUid);
+        } catch (\Exception $e) {
+            return;
+        }
+
+        if (!$file instanceof File) {
+            return;
+        }
+
+        if ($file->getStorage()->getDriverType() !== AmazonS3Driver::DRIVER_KEY) {
+            return;
+        }
+
+        $this->updateCacheControlDirectivesForRemoteObject($file);
+        $processedFileRepository = GeneralUtility::makeInstance(ProcessedFileRepository::class);
+        if ($processedFileRepository instanceof ProcessedFileRepository) {
+            $processedFiles = $processedFileRepository->findAllByOriginalFile($file);
+            array_walk(
+                $processedFiles,
+                function (ProcessedFile $processedFile) {
+                    $this->updateCacheControlDirectivesForRemoteObject($processedFile);
+                }
+            );
         }
     }
 
     /**
      * @param AbstractFile $file
      */
-    protected function updateCacheControlDirectivesForRemoteObject(AbstractFile $file)
+    protected function updateCacheControlDirectivesForRemoteObject(AbstractFile $file): void
     {
         $currentResource = null;
 

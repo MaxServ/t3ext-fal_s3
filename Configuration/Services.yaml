@@ -1,0 +1,23 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  MaxServ\FalS3\:
+    resource: '../Classes/*'
+
+  MaxServ\FalS3\Resource\Event\RemoteObjectUpdateEvent:
+    tags:
+      - name: event.listener
+        identifier: 'create-remote-file-meta-data-cache'
+        method: 'afterFileMetaDataCreated'
+        event: TYPO3\CMS\Core\Resource\Event\AfterFileMetaDataCreatedEvent
+      - name: event.listener
+        identifier: 'update-remote-file-meta-data-cache'
+        method: 'afterFileMetaDataUpdated'
+        event: TYPO3\CMS\Core\Resource\Event\AfterFileMetaDataUpdatedEvent
+      - name: event.listener
+        identifier: 'update-remote-processed-file-meta-data-cache'
+        method: 'afterFileProcessing'
+        event: TYPO3\CMS\Core\Resource\Event\AfterFileProcessingEvent
