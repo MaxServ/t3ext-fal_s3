@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxServ\FalS3\Utility;
 
 /*
@@ -23,12 +25,13 @@ class FlexFormUtility
     /**
      * @param array $parameters
      */
-    public function getStorageConfigurations(array $parameters)
+    public function getStorageConfigurations(array &$parameters): void
     {
         if (
             isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'])
             && is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'])
         ) {
+            // phpcs:ignore
             foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'] as $configurationKey => $storageConfiguration) {
                 if (
                     is_array($storageConfiguration)
