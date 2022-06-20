@@ -134,20 +134,25 @@ call_user_func(function () {
         // phpcs:enable
     }
 
-    // Register icon for FalS3 flush cache menu item
-    /** @var \TYPO3\CMS\Core\Imaging\IconRegistry $iconRegistry */
-    $iconRegistry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-        \TYPO3\CMS\Core\Imaging\IconRegistry::class
-    );
-
-    $iconRegistry->registerIcon(
-        \MaxServ\FalS3\Toolbar\ToolbarItem::ITEM_ICON_IDENTIFIER,
-        \TYPO3\CMS\Core\Imaging\IconProvider\SvgIconProvider::class,
-        [
-            'source' => 'EXT:fal_s3/Resources/Public/Icons/FlushCache.svg'
-        ]
-    );
-
+    // Since TYPO3 v11.4, the ClearCacheActionsHookInterface has been deprecated and has been migrated to a PSR-14 event
     // Register additional clear cache menu item
-    $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['additionalBackendItems']['cacheActions'][\MaxServ\FalS3\Toolbar\ToolbarItem::ITEM_KEY] = \MaxServ\FalS3\Toolbar\ToolbarItem::class;
+    if (version_compare($typo3Branch, '11.5', '<')) {
+        // Register icon for FalS3 flush cache menu item
+        /** @var \TYPO3\CMS\Core\Imaging\IconRegistry $iconRegistry */
+        $iconRegistry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+            \TYPO3\CMS\Core\Imaging\IconRegistry::class
+        );
+
+        $iconRegistry->registerIcon(
+            \MaxServ\FalS3\Toolbar\ToolbarItem::ITEM_ICON_IDENTIFIER,
+            \TYPO3\CMS\Core\Imaging\IconProvider\SvgIconProvider::class,
+            [
+                'source' => 'EXT:fal_s3/Resources/Public/Icons/FlushCache.svg'
+            ]
+        );
+
+        // phpcs:ignore
+        $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['additionalBackendItems']['cacheActions'][\MaxServ\FalS3\Toolbar\ToolbarItem::ITEM_KEY]
+            = \MaxServ\FalS3\Toolbar\ToolbarItem::class;
+    }
 });

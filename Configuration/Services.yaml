@@ -21,3 +21,10 @@ services:
         identifier: 'update-remote-processed-file-meta-data-cache'
         method: 'afterFileProcessing'
         event: TYPO3\CMS\Core\Resource\Event\AfterFileProcessingEvent
+
+  MaxServ\FalS3\Resource\Event\FlushCacheActionEvent:
+    tags:
+      - name: event.listener
+        identifier: 'add-flush-s3-cache-action'
+        method: 'addClearCacheActions'
+        event: TYPO3\CMS\Backend\Backend\Event\ModifyClearCacheActionsEvent
