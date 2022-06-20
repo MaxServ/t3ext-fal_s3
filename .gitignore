@@ -48,8 +48,6 @@
 !/Classes/Controller/*.php
 !/Classes/Driver
 !/Classes/Driver/*.php
-!/Classes/MetaData
-!/Classes/MetaData/*.php
 !/Classes/Processing
 !/Classes/Processing/*.php
 !/Classes/Resource

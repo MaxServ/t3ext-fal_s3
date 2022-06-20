@@ -80,34 +80,6 @@ call_user_func(function () {
             );
         }
 
-        $signalSlotDispatcher->connect(
-            \TYPO3\CMS\Core\Resource\Index\FileIndexRepository::class,
-            'recordUpdated',
-            \MaxServ\FalS3\MetaData\RecordMonitor::class,
-            'recordUpdatedOrCreated'
-        );
-
-        $signalSlotDispatcher->connect(
-            \TYPO3\CMS\Core\Resource\Index\FileIndexRepository::class,
-            'recordCreated',
-            \MaxServ\FalS3\MetaData\RecordMonitor::class,
-            'recordUpdatedOrCreated'
-        );
-
-        $signalSlotDispatcher->connect(
-            \TYPO3\CMS\Core\Resource\Index\MetaDataRepository::class,
-            'recordUpdated',
-            \MaxServ\FalS3\MetaData\RecordMonitor::class,
-            'recordUpdatedOrCreated'
-        );
-
-        $signalSlotDispatcher->connect(
-            \TYPO3\CMS\Core\Resource\Index\MetaDataRepository::class,
-            'recordCreated',
-            \MaxServ\FalS3\MetaData\RecordMonitor::class,
-            'recordUpdatedOrCreated'
-        );
-
         // cache control, trigger an update of remote objects if a change is made locally (eg. by running the scheduler)
         $signalSlotDispatcher->connect(
             \TYPO3\CMS\Core\Resource\Index\MetaDataRepository::class,
