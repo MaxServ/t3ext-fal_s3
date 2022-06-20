@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxServ\FalS3\Tests\Unit\Driver;
 
 /*
@@ -18,6 +20,7 @@ namespace MaxServ\FalS3\Tests\Unit\Driver;
 use MaxServ\FalS3\Driver\AmazonS3Driver;
 use Nimut\TestingFramework\TestCase\UnitTestCase;
 use TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException;
+use TYPO3\CMS\Core\Resource\Exception\InvalidPathException;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -28,18 +31,21 @@ class AmazonS3DriverTest extends UnitTestCase
     /**
      * @param $configuration
      */
-    protected function setConfiguration($configuration)
+    protected function setConfiguration(array $configuration): void
     {
         $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'] = $configuration;
     }
 
     /**
-     * @param array $config
-     *
+     * @param array $configurationKey
+     * @param array $configuration
+     * @throws InvalidConfigurationException
      * @dataProvider processConfigurationDataProvider
      */
-    public function testProcessConfigurationThrowsErrorOnInvalidConfiguration(array $configurationKey, $configuration)
-    {
+    public function testProcessConfigurationThrowsErrorOnInvalidConfiguration(
+        array $configurationKey,
+        array $configuration
+    ): void {
         $this->expectException(InvalidConfigurationException::class);
         $this->setConfiguration($configuration);
 
@@ -51,7 +57,7 @@ class AmazonS3DriverTest extends UnitTestCase
     /**
      * @return array
      */
-    public function processConfigurationDataProvider()
+    public function processConfigurationDataProvider(): array
     {
         return [
             [
@@ -107,13 +113,21 @@ class AmazonS3DriverTest extends UnitTestCase
     }
 
     /**
-     * @param $fileName
-     * @param $expected
+     * @param array $configurationKey
+     * @param array $configuration
+     * @param string $fileName
+     * @param string $expected
      *
+     * @throws InvalidConfigurationException
+     * @throws InvalidPathException
      * @dataProvider getPublicUrlDataProvider
      */
-    public function testGetPublicUrlReturnsCorrectUrlBasedOnSuppliedConfiguration($configurationKey, $configuration, $fileName, $expected)
-    {
+    public function testGetPublicUrlReturnsCorrectUrlBasedOnSuppliedConfiguration(
+        array $configurationKey,
+        array $configuration,
+        string $fileName,
+        string $expected
+    ): void {
         $this->setConfiguration($configuration);
 
         /** @var AmazonS3Driver $driver */
@@ -122,13 +136,13 @@ class AmazonS3DriverTest extends UnitTestCase
 
         $publicUrl = $driver->getPublicUrl($fileName);
 
-        $this->assertEquals($expected, $publicUrl);
+        static::assertEquals($expected, $publicUrl);
     }
 
     /**
      * @return array
      */
-    public function getPublicUrlDataProvider()
+    public function getPublicUrlDataProvider(): array
     {
         return [
             [
