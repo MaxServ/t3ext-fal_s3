@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [UNRELEASED]
+### Added
+- PSR-14 `FlushCacheActionEvent` to add the cache flush action item (TYPO3 v11+)
+- PSR-14 `RemoteObjectUpdateEvent` to set remote object cache for after a file has been uploaded, replaced or processed (TYPO3 v10+)
+- New Icons API implementation for the S3 driver icons (TYPO3 v11+)
+- Strict typing in classes and methods if possible
+
+### Changed
+- `.gitignore` structure to only include specified files
+- Load `ImagePreviewConfiguration` signal slot in TYPO3 v8 only, since the preview dimensions are fetched from TSconfig in TYPO3 v9+
+- Refactored `ToolbarItem` hook implementation for TYPO3 v8, v9 and v10 to extend the newly implemented `FlushCacheActionEvent` so these share the same code base
+- Refactored `RemoteObjectUpdate` signal slot implementation for TYPO3 v8 and v9 to extend the newly implemented `RemoteObjectUpdateEvent` so these share the same code base
+- Refactored `AmazonS3Driver` to use the `MimeType::fromExtension` method instead of the removed `mimetype_from_extension` function
+- Simplified `AmazonS3Driver` methods `processConfiguration` and `initialize` to make it better to read, debug and test
+- Minimum version of `php` to v7.1
+- Minimum version of `aws/aws-sdk-php` to v3.199 to match TYPO3 requirements
+
+### Removed
+- TYPO3 v6 and v7 compatibility
+- `RecordMonitor` class since this has been replaced by the `ImageDimensionsExtraction` extractor but was kept for backwards compatibility
+
 ## [1.13.1] - 2022-06-20
 ### Fixed
 - Correctly implement the `fileExists` method by adding a method which requests the `HEAD` of the object in the S3 storage
