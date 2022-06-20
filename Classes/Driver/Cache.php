@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxServ\FalS3\Driver;
 
 /*
@@ -66,7 +68,7 @@ class Cache extends LruArrayCache
      * @param int $ttl In seconds, 0 = unlimited
      * @throws NoSuchCacheException
      */
-    public function set($key, $value, $ttl = 0)
+    public function set($key, $value, $ttl = 0): void
     {
         $key = rtrim($key, '/');
         $cacheFrontend = self::getCacheFrontend();
@@ -83,7 +85,7 @@ class Cache extends LruArrayCache
      * @param string $key Key to remove.
      * @throws NoSuchCacheException
      */
-    public function remove($key)
+    public function remove($key): void
     {
         $key = rtrim($key, '/');
         $cacheFrontend = self::getCacheFrontend();
@@ -100,7 +102,7 @@ class Cache extends LruArrayCache
      *
      * @return string
      */
-    public static function buildEntryIdentifier($key, $prefix = 'fi')
+    public static function buildEntryIdentifier(string $key, string $prefix = 'fi'): string
     {
         return $prefix . '-' . md5($key);
     }
@@ -109,7 +111,7 @@ class Cache extends LruArrayCache
      * @return VariableFrontend
      * @throws NoSuchCacheException
      */
-    public static function getCacheFrontend()
+    public static function getCacheFrontend(): VariableFrontend
     {
         if (empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3'])) {
             throw new NoSuchCacheException('Missing cache configuration for tx_fal_s3 extension', 1655459397);

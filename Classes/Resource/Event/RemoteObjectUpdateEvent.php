@@ -76,7 +76,7 @@ class RemoteObjectUpdateEvent
      * @return array Array of passed arguments, single item in it which is unmodified $data
      * @deprecated Since TYPO3 v10.2, core uses PSR-14 events. This signal slot is only being used in TYPO3 v8 and v9.
      */
-    public function onLocalMetadataRecordUpdatedOrCreated(array $data)
+    public function onLocalMetadataRecordUpdatedOrCreated(array $data): array
     {
         $fileUid = (int)($data['file'] ?? 0);
         if ($fileUid > 0) {
@@ -106,9 +106,9 @@ class RemoteObjectUpdateEvent
         DriverInterface $driver,
         ProcessedFile $processedFile,
         FileInterface $fileObject,
-        $taskType,
+        string $taskType,
         array $configuration
-    ) {
+    ): void {
         $fileInfo = $driver->getFileInfoByIdentifier($processedFile->getIdentifier());
         if ($this->remoteObjectNeedsUpdate($fileInfo)) {
             $this->updateCacheControlDirectivesForRemoteObject($processedFile);
@@ -175,8 +175,7 @@ class RemoteObjectUpdateEvent
         $key .= ltrim($file->getIdentifier(), '/');
 
         if (
-            is_array($driverConfiguration)
-            && array_key_exists('bucket', $driverConfiguration)
+            array_key_exists('bucket', $driverConfiguration)
             && $client instanceof S3Client
         ) {
             try {

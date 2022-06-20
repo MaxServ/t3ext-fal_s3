@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxServ\FalS3\Processing;
 
 /*
@@ -57,9 +59,9 @@ class ImagePreviewConfiguration
         DriverInterface $driver,
         ProcessedFile $processedFile,
         FileInterface $fileObject,
-        $taskType,
+        string $taskType,
         array $configuration
-    ) {
+    ): void {
         if (
             $taskType === ProcessedFile::CONTEXT_IMAGEPREVIEW
             && empty($configuration)
@@ -103,7 +105,7 @@ class ImagePreviewConfiguration
      * @param array $configuration
      * @return bool
      */
-    protected static function isDefaultPreviewConfiguration(array $configuration)
+    protected static function isDefaultPreviewConfiguration(array $configuration): bool
     {
         return count($configuration) === 2
             && $configuration['width'] === self::DEFAULT_PREVIEW_WIDTH
