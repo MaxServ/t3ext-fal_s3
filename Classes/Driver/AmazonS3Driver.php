@@ -15,7 +15,6 @@ namespace MaxServ\FalS3\Driver;
  * The TYPO3 project - inspiring people to share!
  */
 
-use Aws\S3\Exception\S3Exception;
 use Aws\S3\S3Client;
 use Aws\S3\StreamWrapper;
 use TYPO3\CMS\Core\Resource\Driver\AbstractHierarchicalFilesystemDriver;
@@ -402,19 +401,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         );
 
         if (!array_key_exists($path, $this->fileExistsCache)) {
-            try {
-                $this->s3Client->headObject(
-                    [
-                        'Bucket' => $this->configuration['bucket'],
-                        'Key' => ltrim($this->getBasePath() . $fileIdentifier, '/')
-                    ]
-                );
-
-                $this->fileExistsCache[$path] = true;
-            } catch (\Exception $e) {
-                // File does not exist, we might want to mark it as missing
-                $this->fileExistsCache[$path] = false;
-            }
+            $this->fileExistsCache[$path] = is_file($path);
         }
 
         return $this->fileExistsCache[$path];
