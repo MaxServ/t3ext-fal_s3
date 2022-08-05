@@ -25,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TYPO3 v6 and v7 compatibility
 - `RecordMonitor` class since this has been replaced by the `ImageDimensionsExtraction` extractor but was kept for backwards compatibility
 
+## [1.13.2] - 2022-08-05
+### Fixed
+- Partly reverted 1.13.1, since it caused performance issues. The calls to `is_file` in `AmazonS3Driver::fileExists` were cached by the StreamWrapper (`StreamWrapper::url_stat`). HeadObject calls however are not cached.
+
 ## [1.13.1] - 2022-06-20
 ### Fixed
 - Correctly implement the `fileExists` method by adding a method which requests the `HEAD` of the object in the S3 storage
