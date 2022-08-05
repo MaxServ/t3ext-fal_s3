@@ -63,7 +63,10 @@ class RemoteObjectUpdateEvent
      */
     public function afterFileProcessing(AfterFileProcessingEvent $event): void
     {
-        $fileInfo = $event->getDriver()->getFileInfoByIdentifier($event->getProcessedFile()->getIdentifier());
+        $fileInfo = $event->getProcessedFile()->getStorage()->getFileInfoByIdentifier(
+            $event->getProcessedFile()->getIdentifier()
+        );
+
         if ($this->remoteObjectNeedsUpdate($fileInfo)) {
             $this->updateCacheControlDirectivesForRemoteObject($event->getProcessedFile());
         }
