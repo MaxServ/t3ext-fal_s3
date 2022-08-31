@@ -496,18 +496,13 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         $targetFileIdentifier = rtrim($parentFolderIdentifier, '/')
             . $this->canonicalizeAndCheckFileIdentifier($fileName);
         $absolutePath = $this->getStreamWrapperPath($targetFileIdentifier);
-        $basePath = '';
-
-        if (array_key_exists('basePath', $this->configuration) && !empty($this->configuration['basePath'])) {
-            $basePath = '/' . trim($this->configuration['basePath'], '/');
-        }
 
         // create an empty file using the putObject method instead of the wrapper
         // file_put_contents() without data or touch() yield unexpected results
         $this->s3Client->putObject(
             [
                 'Bucket' => $this->configuration['bucket'],
-                'Key' => ltrim($basePath . $targetFileIdentifier, '/'),
+                'Key' => ltrim($this->getBasePath() . $targetFileIdentifier, '/'),
                 'Body' => ''
             ]
         );
@@ -630,6 +625,10 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
     {
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
         $path = $this->getStreamWrapperPath($fileIdentifier);
+        if (!$this->fileExists($fileIdentifier)) {
+            // The ResourceStorage catches an empty hash and handles
+            return '';
+        }
 
         switch ($hashAlgorithm) {
             case 'sha1':
@@ -842,13 +841,22 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      *                       have set this flag!
      * @return string The path to the file on the local disk
      * @throws InvalidPathException
+     * @throws \RuntimeException
      */
     public function getFileForLocalProcessing($fileIdentifier, $writable = true)
     {
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
+
+        if (!$this->fileExists($fileIdentifier)) {
+            // LocalDriver throws a RuntimeException if the file does not exist. We want the same behaviour.
+            throw new \RuntimeException(
+                'File "' . $fileIdentifier . '" does no longer exist on the S3 storage',
+                1654008397
+            );
+        }
+
         $temporaryFilePath = $this->getTemporaryPathForFile($fileIdentifier);
         $path = $this->getStreamWrapperPath($fileIdentifier);
-
         copy($path, $temporaryFilePath);
 
         if (!$writable) {
@@ -929,7 +937,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
     {
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
         $path = $this->getStreamWrapperPath($fileIdentifier);
-        return $this->extractFileInformation($fileIdentifier, $path, $propertiesToExtract);
+        return $this->fileExists($fileIdentifier)
+            ? $this->extractFileInformation($fileIdentifier, $path, $propertiesToExtract)
+            : [];
     }
 
     /**
@@ -1445,6 +1455,18 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
     protected function getProcessingFolder()
     {
         return $this->getStorage()->getProcessingFolder()->getName();
+    }
+
+    /**
+     * @return string
+     */
+    protected function getBasePath()
+    {
+        if (array_key_exists('basePath', $this->configuration) && !empty($this->configuration['basePath'])) {
+            return '/' . trim($this->configuration['basePath'], '/');
+        }
+
+        return '';
     }
 
     /**

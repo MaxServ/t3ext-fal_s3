@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Compatibility for TYPO3 v6
 
+## [1.13.2] - 2022-08-05
+### Fixed
+- Partly reverted 1.13.1, since it caused performance issues. The calls to `is_file` in `AmazonS3Driver::fileExists` were cached by the StreamWrapper (`StreamWrapper::url_stat`). HeadObject calls however are not cached.
+
+## [1.13.1] - 2022-06-20
+### Fixed
+- Correctly implement the `fileExists` method by adding a method which requests the `HEAD` of the object in the S3 storage
+
 ## [1.13.0] - 2022-02-22
 ### Added
 - Suggestion for `causal/extractor` extension for extended metadata extraction
