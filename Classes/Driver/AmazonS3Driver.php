@@ -1317,13 +1317,13 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
             }
             $iterator->next();
             $file = $this->getFileInfoByIdentifier($entry);
-            if (
-            !$this->applyFilterMethodsToDirectoryItem(
-                $filterMethods,
-                $file['name'],
-                $file['identifier'],
-                $this->getParentFolderIdentifierOfIdentifier($file['identifier'])
-            )
+            if (!empty($file) &&
+                !$this->applyFilterMethodsToDirectoryItem(
+                    $filterMethods,
+                    $file['name'],
+                    $file['identifier'],
+                    $this->getParentFolderIdentifierOfIdentifier($file['identifier'])
+                )
             ) {
                 unset($directoryEntries[$entry]);
             }
@@ -1351,7 +1351,11 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         $parentIdentifier
     ) {
         foreach ($filterMethods as $filter) {
-            if (is_callable($filter)) {
+            if (is_callable($filter)
+                && is_string($itemName) && $itemName !== ''
+                && is_string($itemIdentifier) && $itemIdentifier !== ''
+                && is_string($parentIdentifier) && $parentIdentifier !== ''
+            ) {
                 $result = call_user_func($filter, $itemName, $itemIdentifier, $parentIdentifier, [], $this);
                 // We have to use -1 as the „don't include“ return value, as call_user_func() will return FALSE
                 // If calling the method succeeded and thus we can't use that as a return value.
