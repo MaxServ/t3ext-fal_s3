@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Compatibility for TYPO3 v6
 
+## [1.13.3] - 2022-09-07
+### Fixed
+- Prevent filelist exception when a directory contains a file of type 'Octet-stream' + directory with the same name
+
 ## [1.13.2] - 2022-08-05
 ### Fixed
 - Partly reverted 1.13.1, since it caused performance issues. The calls to `is_file` in `AmazonS3Driver::fileExists` were cached by the StreamWrapper (`StreamWrapper::url_stat`). HeadObject calls however are not cached.
