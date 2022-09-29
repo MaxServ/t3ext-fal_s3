@@ -1185,7 +1185,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         );
 
         $count = Cache::getCacheFrontend()->get($cacheEntryIdentifier);
-        if (!$count) {
+        if ($count === false) {
             $count = count($this->getFilesInFolder($folderIdentifier, 0, 0, $recursive, $filenameFilterCallbacks));
             $cacheTags = [Cache::buildEntryIdentifier($path, 'd')];
             Cache::getCacheFrontend()->set($cacheEntryIdentifier, $count, $cacheTags, 0);
@@ -1215,7 +1215,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         );
 
         $count = Cache::getCacheFrontend()->get($cacheEntryIdentifier);
-        if (!$count) {
+        if ($count === false) {
             $count = count($this->getFoldersInFolder($folderIdentifier, 0, 0, $recursive, $folderNameFilterCallbacks));
             $cacheTags = [Cache::buildEntryIdentifier($path, 'd')];
             Cache::getCacheFrontend()->set($cacheEntryIdentifier, $count, $cacheTags, 0);
