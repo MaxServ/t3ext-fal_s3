@@ -1176,8 +1176,24 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      */
     public function countFilesInFolder($folderIdentifier, $recursive = false, array $filenameFilterCallbacks = [])
     {
-        return count($this->getFilesInFolder($folderIdentifier, 0, 0, $recursive, $filenameFilterCallbacks));
+        $folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
+        $path = $this->getStreamWrapperPath($folderIdentifier);
+
+        $cacheEntryIdentifier = Cache::buildEntryIdentifier(
+            $path,
+            'count_files'
+        );
+
+        $count = Cache::getCacheFrontend()->get($cacheEntryIdentifier);
+        if ($count === false) {
+            $count = count($this->getFilesInFolder($folderIdentifier, 0, 0, $recursive, $filenameFilterCallbacks));
+            $cacheTags = [Cache::buildEntryIdentifier($path, 'd')];
+            Cache::getCacheFrontend()->set($cacheEntryIdentifier, $count, $cacheTags, 0);
+        }
+
+        return (int)$count;
     }
+
 
     /**
      * Returns the number of folders inside the specified path
@@ -1190,7 +1206,22 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
      */
     public function countFoldersInFolder($folderIdentifier, $recursive = false, array $folderNameFilterCallbacks = [])
     {
-        return count($this->getFoldersInFolder($folderIdentifier, 0, 0, $recursive, $folderNameFilterCallbacks));
+        $folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
+        $path = $this->getStreamWrapperPath($folderIdentifier);
+
+        $cacheEntryIdentifier = Cache::buildEntryIdentifier(
+            $path,
+            'count_folders'
+        );
+
+        $count = Cache::getCacheFrontend()->get($cacheEntryIdentifier);
+        if ($count === false) {
+            $count = count($this->getFoldersInFolder($folderIdentifier, 0, 0, $recursive, $folderNameFilterCallbacks));
+            $cacheTags = [Cache::buildEntryIdentifier($path, 'd')];
+            Cache::getCacheFrontend()->set($cacheEntryIdentifier, $count, $cacheTags, 0);
+        }
+
+        return (int)$count;
     }
 
     /**
