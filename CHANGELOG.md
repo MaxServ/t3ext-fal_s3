@@ -25,6 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TYPO3 v6 and v7 compatibility
 - `RecordMonitor` class since this has been replaced by the `ImageDimensionsExtraction` extractor but was kept for backwards compatibility
 
+## [1.14.0] - 2022-09-30
+### Added
+- Caching to `countFilesInFolder` and `countFoldersInFolder` methods
+
+## [1.13.3] - 2022-09-07
+### Fixed
+- Prevent filelist exception when a directory contains a file of type 'Octet-stream' + directory with the same name
+
 ## [1.13.2] - 2022-08-05
 ### Fixed
 - Partly reverted 1.13.1, since it caused performance issues. The calls to `is_file` in `AmazonS3Driver::fileExists` were cached by the StreamWrapper (`StreamWrapper::url_stat`). HeadObject calls however are not cached.
