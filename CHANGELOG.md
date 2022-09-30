@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Compatibility for TYPO3 v6
 
+## [1.14.0] - 2022-09-30
+### Added
+- Caching to `countFilesInFolder` and `countFoldersInFolder` methods
+
 ## [1.13.3] - 2022-09-07
 ### Fixed
 - Prevent filelist exception when a directory contains a file of type 'Octet-stream' + directory with the same name
