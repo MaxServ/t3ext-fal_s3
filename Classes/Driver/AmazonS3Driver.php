@@ -399,7 +399,17 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
             '/'
         );
 
-        if (!array_key_exists($path, $this->fileExistsCache)) {
+        /** @var \TYPO3\CMS\Core\Http\ServerRequest $request */
+        $request = $GLOBALS['TYPO3_REQUEST'];
+        $modifyingRequestMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
+        // Prevent duplicate calls to redis (e.g. in the filelist, which calls fileExists _a lot_ for the same file)
+        // by caching the result in memory.
+        // However, in some request methods it can happen that a file doesn't exist at the beginning of the request,
+        // but is created during the request. Therefore, when the request method is one of the modifying ones,
+        // bypass the cache.
+        if (!array_key_exists($path, $this->fileExistsCache)
+            || in_array($request->getMethod(), $modifyingRequestMethods, true)
+        ) {
             $this->fileExistsCache[$path] = is_file($path);
         }
 
