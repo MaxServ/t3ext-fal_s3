@@ -25,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TYPO3 v6 and v7 compatibility
 - `RecordMonitor` class since this has been replaced by the `ImageDimensionsExtraction` extractor but was kept for backwards compatibility
 
+## [1.14.2] - 2023-09-30
+### Fixed
+- Error when TYPO3_REQUEST is null
+
 ## [1.14.1] - 2023-03-29
 ### Fixed
 - 'Replace' option in the filelist didn't work due to excessive caching
