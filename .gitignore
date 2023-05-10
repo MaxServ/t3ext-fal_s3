@@ -44,6 +44,8 @@
 
 # PHP
 !/Classes
+!/Classes/CacheControl
+!/Classes/CacheControl/*.php
 !/Classes/Controller
 !/Classes/Controller/*.php
 !/Classes/Driver

@@ -84,21 +84,21 @@ call_user_func(function () {
         $signalSlotDispatcher->connect(
             \TYPO3\CMS\Core\Resource\Index\MetaDataRepository::class,
             'recordUpdated',
-            \MaxServ\FalS3\Resource\Event\RemoteObjectUpdateEvent::class,
+            \MaxServ\FalS3\CacheControl\RemoteObjectUpdateCacheControl::class,
             'onLocalMetadataRecordUpdatedOrCreated'
         );
 
         $signalSlotDispatcher->connect(
             \TYPO3\CMS\Core\Resource\Index\MetaDataRepository::class,
             'recordCreated',
-            \MaxServ\FalS3\Resource\Event\RemoteObjectUpdateEvent::class,
+            \MaxServ\FalS3\CacheControl\RemoteObjectUpdateCacheControl::class,
             'onLocalMetadataRecordUpdatedOrCreated'
         );
 
         $signalSlotDispatcher->connect(
             \TYPO3\CMS\Core\Resource\ResourceStorage::class,
             'postFileProcess',
-            \MaxServ\FalS3\Resource\Event\RemoteObjectUpdateEvent::class,
+            \MaxServ\FalS3\CacheControl\RemoteObjectUpdateCacheControl::class,
             'onPostFileProcess'
         );
     }

@@ -8,6 +8,7 @@ services:
     resource: '../Classes/*'
 
   MaxServ\FalS3\Resource\Event\RemoteObjectUpdateEvent:
+    public: true
     tags:
       - name: event.listener
         identifier: 'create-remote-file-meta-data-cache'
