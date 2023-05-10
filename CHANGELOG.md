@@ -1,4 +1,5 @@
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -14,6 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Compatibility for TYPO3 v6
 
+## [1.14.2] - 2023-09-30
+### Fixed
+- Error when TYPO3_REQUEST is null 
+
+## [1.14.1] - 2023-03-29
+### Fixed
+
+- 'Replace' option in the filelist didn't work due to excessive caching
+
 ## [1.14.0] - 2022-09-30
 ### Added
 - Caching to `countFilesInFolder` and `countFoldersInFolder` methods
@@ -24,7 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.13.2] - 2022-08-05
 ### Fixed
-- Partly reverted 1.13.1, since it caused performance issues. The calls to `is_file` in `AmazonS3Driver::fileExists` were cached by the StreamWrapper (`StreamWrapper::url_stat`). HeadObject calls however are not cached.
+- Partly reverted 1.13.1, since it caused performance issues. The calls to `is_file` in `AmazonS3Driver::fileExists`
+  were cached by the StreamWrapper (`StreamWrapper::url_stat`). HeadObject calls however are not cached.
 
 ## [1.13.1] - 2022-06-20
 ### Fixed
