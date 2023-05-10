@@ -63,12 +63,14 @@ class RemoteObjectUpdateEvent
      */
     public function afterFileProcessing(AfterFileProcessingEvent $event): void
     {
-        $fileInfo = $event->getProcessedFile()->getStorage()->getFileInfoByIdentifier(
-            $event->getProcessedFile()->getIdentifier()
-        );
+        if ($event->getProcessedFile()->exists()) {
+            $fileInfo = $event->getProcessedFile()->getStorage()->getFileInfoByIdentifier(
+                $event->getProcessedFile()->getIdentifier()
+            );
 
-        if ($this->remoteObjectNeedsUpdate($fileInfo)) {
-            $this->updateCacheControlDirectivesForRemoteObject($event->getProcessedFile());
+            if ($this->remoteObjectNeedsUpdate($fileInfo)) {
+                $this->updateCacheControlDirectivesForRemoteObject($event->getProcessedFile());
+            }
         }
     }
 

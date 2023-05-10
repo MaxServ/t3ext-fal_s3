@@ -165,7 +165,7 @@ class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
     /**
      * @see Iterator::key()
      */
-    public function key()
+    public function key(): mixed
     {
         return $this->currentIndex;
     }
@@ -173,7 +173,7 @@ class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
     /**
      * @see Iterator::current()
      */
-    public function current()
+    public function current(): mixed
     {
         return $this->filesAndFolders[$this->currentIndex];
     }
