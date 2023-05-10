@@ -150,7 +150,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
     /**
      * Initializes this object. This is called by the storage after the driver
      * has been attached.
-     * @throws InvalidConfigurationException
      */
     public function initialize(): void
     {
@@ -162,11 +161,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
             || empty($this->configuration['secret'])
             || !is_string($this->configuration['secret'])
         ) {
-            // throw an InvalidConfigurationException to trigger the storage to mark itself as offline
-            throw new InvalidConfigurationException(
-                'Missing configuration for "' . $this->configuration['configurationKey'] . '"',
-                1644836749
-            );
+            return;
         }
 
         $this->s3Client = new S3Client(
