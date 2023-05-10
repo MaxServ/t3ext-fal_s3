@@ -164,16 +164,29 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
             return;
         }
 
-        $this->s3Client = new S3Client(
-            [
-                'version' => '2006-03-01',
-                'region' => $this->configuration['region'],
-                'credentials' => [
-                    'key' => $this->configuration['key'],
-                    'secret' => $this->configuration['secret']
-                ]
+        $clientConfiguration = [
+            'version' => '2006-03-01',
+            'region' => $this->configuration['region'],
+            'credentials' => [
+                'key' => $this->configuration['key'],
+                'secret' => $this->configuration['secret']
             ]
-        );
+        ];
+
+        // Custom client endpoint. If set, apply the custom endpoint
+        if (isset($this->configuration['endpoint']) && is_string($this->configuration['endpoint'])) {
+            $clientConfiguration['endpoint'] = $this->configuration['endpoint'];
+        }
+
+        // Custom path style endpoint setting. If set, use a path style endpoint
+        if (
+            isset($this->configuration['use_path_style_endpoint'])
+            && is_bool($this->configuration['use_path_style_endpoint'])
+        ) {
+            $clientConfiguration['use_path_style_endpoint'] = $this->configuration['use_path_style_endpoint'];
+        }
+
+        $this->s3Client = new S3Client($clientConfiguration);
 
         // strip the s3 protocol prefix from the bucket name
         if (strpos($this->configuration['bucket'], 's3://') === 0) {
