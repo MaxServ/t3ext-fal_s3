@@ -326,6 +326,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         mkdir($path, 0, $recursive);
 
         $this->flushCacheEntriesForFolder($parentFolderIdentifier);
+        unset($this->folderExistsCache[rtrim($path, '/')]);
 
         return $identifier;
     }
@@ -380,6 +381,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
 
         $this->flushCacheEntriesForFolder($folderIdentifier);
         $this->flushCacheEntriesForFolder(dirname($folderIdentifier));
+        unset($this->folderExistsCache[rtrim($folderIdentifier, '/')]);
 
         return unlink($path);
     }
@@ -430,11 +432,11 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
 
         $path = $this->getStreamWrapperPath($folderIdentifier);
 
-        if (!array_key_exists($path, $this->folderExistsCache)) {
-            $this->folderExistsCache[$path] = is_dir($path);
+        if (!array_key_exists(rtrim($path, '/'), $this->folderExistsCache)) {
+            $this->folderExistsCache[rtrim($path, '/')] = is_dir($path);
         }
 
-        return $this->folderExistsCache[$path];
+        return $this->folderExistsCache[rtrim($path, '/')];
     }
 
     /**
@@ -536,6 +538,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         copy($sourcePath, $targetPath);
 
         $this->flushCacheEntriesForFolder($targetFolderIdentifier);
+        unset($this->fileExistsCache[rtrim($sourcePath, '/')], $this->fileExistsCache[rtrim($targetPath, '/')]);
 
         return $targetFileIdentifier;
     }
@@ -572,6 +575,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         rename($oldPath, $newPath);
 
         $this->flushCacheEntriesForFolder($parentFolderName);
+        unset($this->fileExistsCache[rtrim($oldPath, '/')], $this->fileExistsCache[rtrim($newPath, '/')]);
 
         return $newIdentifier;
     }
@@ -590,6 +594,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         $filePath = $this->getStreamWrapperPath($fileIdentifier);
 
         $this->flushCacheEntriesForFolder(dirname($fileIdentifier));
+        unset($this->fileExistsCache[rtrim($filePath, '/')]);
 
         $this->temporaryFiles[$fileIdentifier] = $localFilePath;
         return copy($localFilePath, $filePath);
@@ -610,6 +615,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         $path = $this->getStreamWrapperPath($fileIdentifier);
 
         $this->flushCacheEntriesForFolder(dirname($fileIdentifier));
+        unset($this->fileExistsCache[rtrim($path, '/')]);
 
         return unlink($path);
     }
@@ -668,6 +674,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         $this->flushCacheEntriesForFolder($targetFolderIdentifier);
 
         rename($sourcePath, $targetPath);
+        unset($this->fileExistsCache[rtrim($sourcePath, '/')], $this->fileExistsCache[rtrim($targetPath, '/')]);
 
         return $targetFileIdentifier;
     }
@@ -706,6 +713,10 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
             }
 
             rename($oldEntryPath, $newEntryPath);
+            unset(
+                $this->folderExistsCache[rtrim($oldEntryPath, '/')],
+                $this->folderExistsCache[rtrim($newEntryPath, '/')]
+            );
 
             $renamedEntries[$oldEntryIdentifier] = $newEntryIdentifier;
         }
@@ -717,6 +728,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         $this->flushCacheEntriesForFolder($sourceFolderIdentifier);
         $this->flushCacheEntriesForFolder(dirname($sourceFolderIdentifier));
         $this->flushCacheEntriesForFolder(dirname($targetFolderIdentifier));
+        unset($this->folderExistsCache[rtrim($oldPath, '/')], $this->folderExistsCache[rtrim($newPath, '/')]);
 
         return $renamedEntries;
     }
@@ -761,6 +773,8 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
             } else {
                 copy($sourcePath, $targetPath);
             }
+
+            unset($this->folderExistsCache[rtrim($sourcePath, '/')], $this->folderExistsCache[rtrim($targetPath, '/')]);
         }
 
         $this->flushCacheEntriesForFolder(dirname($targetFolderIdentifier));
