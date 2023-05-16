@@ -767,6 +767,14 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
 
         $sourceDirectoryContents = $this->resolveFolderEntries($sourceFolderIdentifier, true, true, true);
 
+        /**
+         * Make sure the target folder exists before trying to copy folders.
+         * The TYPO3 ResourceDriver will throw an exception when copying files in the filelist or at processing images.
+         */
+        if (!$this->folderExists($targetFolderIdentifier)) {
+            $this->createFolder($targetFolderIdentifier);
+        }
+
         foreach ($sourceDirectoryContents as $sourceEntry) {
             $sourcePath = $this->getStreamWrapperPath($sourceEntry);
             $targetPath = $this->getStreamWrapperPath(
