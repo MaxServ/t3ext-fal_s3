@@ -328,7 +328,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
          * The value null can not be used because it will throw errors when PHP is set to strict types.
          * @see https://github.com/aws/aws-sdk-php/blob/master/src/S3/StreamWrapper.php#L873-L880
          */
-        mkdir($path, 0, $recursive);
+        if (!mkdir($path, 0, $recursive) && !is_dir($path)) {
+            throw new \RuntimeException(sprintf('Directory "%s" was not created', $path));
+        }
 
         $this->flushCacheEntriesForFolder($parentFolderIdentifier);
         unset($this->folderExistsCache[rtrim($path, '/')]);
@@ -659,7 +661,17 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
                 $hash = md5_file($path);
                 break;
             default:
-                throw new \RuntimeException('Hash algorithm ' . $hashAlgorithm . ' is not implemented.', 1329644451);
+                throw new \RuntimeException(
+                    sprintf('Hash algorithm "%s" is not implemented.', $hashAlgorithm),
+                    1329644451
+                );
+        }
+
+        if ($hash === false) {
+            throw new \RuntimeException(
+                sprintf('Could not hash file "%s" with hash algorithm "%s".', $fileIdentifier, $hashAlgorithm),
+                1685440788
+            );
         }
 
         return $hash;
@@ -794,7 +806,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
                  * The value null can not be used because it will throw errors when PHP is set to strict types.
                  * @see https://github.com/aws/aws-sdk-php/blob/master/src/S3/StreamWrapper.php#L873-L880
                  */
-                mkdir($targetPath, 0, true);
+                if (!mkdir($targetPath, 0, true) && !is_dir($targetPath)) {
+                    throw new \RuntimeException(sprintf('Directory "%s" was not created', $targetPath));
+                }
             } else {
                 copy($sourcePath, $targetPath);
             }
@@ -821,7 +835,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
     {
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
 
-        return file_get_contents($this->getStreamWrapperPath($fileIdentifier));
+        return file_get_contents($this->getStreamWrapperPath($fileIdentifier)) ?: '';
     }
 
     /**
@@ -836,7 +850,13 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
     {
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
 
-        return file_put_contents($this->getStreamWrapperPath($fileIdentifier), $contents);
+        $file = file_put_contents($this->getStreamWrapperPath($fileIdentifier), $contents);
+
+        if ($file === false) {
+            throw new \RuntimeException(sprintf('File "%s" was not created', $fileIdentifier));
+        }
+
+        return $file;
     }
 
     /**
