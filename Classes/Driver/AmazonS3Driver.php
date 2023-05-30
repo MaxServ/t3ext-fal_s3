@@ -137,7 +137,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         ) {
             // throw an InvalidConfigurationException to trigger the storage to mark itself as offline
             throw new InvalidConfigurationException(
-                'Missing configuration for "' . $this->configuration['configurationKey'] . '"',
+                sprintf('Missing configuration for "%s"', $this->configuration['configurationKey']),
                 1438785908
             );
         }
@@ -910,7 +910,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         if (!$this->fileExists($fileIdentifier)) {
             // LocalDriver throws a RuntimeException if the file does not exist. We want the same behaviour.
             throw new \RuntimeException(
-                'File "' . $fileIdentifier . '" does no longer exist on the S3 storage',
+                sprintf('File "%s" does no longer exist on the S3 storage', $fileIdentifier),
                 1654008397
             );
         }
@@ -1322,7 +1322,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         } elseif (is_string($file)) {
             $identifier = $file;
         } else {
-            throw new \RuntimeException('Type "' . gettype($file) . '" is not supported.', 1325191178);
+            throw new \RuntimeException(sprintf('Type "%s" is not supported.', gettype($file)), 1325191178);
         }
 
         return $basePath . $identifier;
@@ -1471,7 +1471,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
                 }
                 if ($result === false) {
                     throw new \RuntimeException(
-                        'Could not apply file/folder name filter ' . $filter[0] . '::' . $filter[1],
+                        sprintf('Could not apply file/folder name filter %s::%s', $filter[0], $filter[1]),
                         1476046425
                     );
                 }
