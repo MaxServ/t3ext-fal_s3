@@ -20,8 +20,12 @@ namespace MaxServ\FalS3\Driver;
 use Aws\S3\S3Client;
 use Aws\S3\StreamWrapper;
 use GuzzleHttp\Psr7\MimeType;
+use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException;
+use TYPO3\CMS\Core\Http\Response;
+use TYPO3\CMS\Core\Http\Stream;
 use TYPO3\CMS\Core\Resource\Driver\AbstractHierarchicalFilesystemDriver;
+use TYPO3\CMS\Core\Resource\Driver\StreamableDriverInterface;
 use TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException;
 use TYPO3\CMS\Core\Resource\Exception\InvalidPathException;
 use TYPO3\CMS\Core\Resource\FileInterface;
@@ -36,7 +40,7 @@ use TYPO3\CMS\Core\Utility\PathUtility;
 /**
  * Class AmazonS3Driver
  */
-class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
+class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements StreamableDriverInterface
 {
     /**
      * @var string
@@ -1298,6 +1302,35 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver
         }
 
         return (int)$count;
+    }
+
+    /**
+     * @throws InvalidPathException
+     */
+    public function streamFile(string $identifier, array $properties): ResponseInterface
+    {
+        $fileInfo = $this->getFileInfoByIdentifier($identifier, ['name', 'mimetype', 'mtime', 'size']);
+        $downloadName = $properties['filename_overwrite'] ?? $fileInfo['name'] ?? '';
+        $mimeType = $properties['mimetype_overwrite'] ?? $fileInfo['mimetype'] ?? '';
+        $contentDisposition = ($properties['as_download'] ?? false) ? 'attachment' : 'inline';
+
+        $stream = new Stream('php://temp', 'rw');
+        $stream->write($this->getFileContents($identifier));
+        $stream->rewind();
+
+        return new Response(
+            $stream,
+            200,
+            [
+                'Content-Disposition' => $contentDisposition . '; filename="' . $downloadName . '"',
+                'Content-Type' => $mimeType,
+                'Content-Length' => (string)$fileInfo['size'],
+                'Last-Modified' => gmdate('D, d M Y H:i:s', $fileInfo['mtime']) . ' GMT',
+                // Cache-Control header is needed here to solve an issue with browser IE8 and lower
+                // See for more information: http://support.microsoft.com/kb/323308
+                'Cache-Control' => '',
+            ]
+        );
     }
 
     /**
