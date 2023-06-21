@@ -44,14 +44,10 @@
 
 # PHP
 !/Classes
-!/Classes/CacheControl
-!/Classes/CacheControl/*.php
 !/Classes/Controller
 !/Classes/Controller/*.php
 !/Classes/Driver
 !/Classes/Driver/*.php
-!/Classes/Processing
-!/Classes/Processing/*.php
 !/Classes/Resource
 !/Classes/Resource/Event
 !/Classes/Resource/Event/*.php

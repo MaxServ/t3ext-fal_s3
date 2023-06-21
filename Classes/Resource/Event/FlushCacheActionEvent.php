@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+// phpcs:ignore
 namespace MaxServ\FalS3\Resource\Event;
 
 use TYPO3\CMS\Backend\Backend\Event\ModifyClearCacheActionsEvent;

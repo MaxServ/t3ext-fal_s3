@@ -2,7 +2,7 @@
 
 defined('TYPO3_MODE') or die();
 
-call_user_func(function () {
+(static function () {
     /** @var \TYPO3\CMS\Core\Resource\Driver\DriverRegistry $driverRegistry */
     $driverRegistry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
         \TYPO3\CMS\Core\Resource\Driver\DriverRegistry::class
@@ -47,62 +47,6 @@ call_user_func(function () {
         ]
     ];
 
-    if (class_exists(\TYPO3\CMS\Core\Information\Typo3Version::class)) {
-        $typo3Branch = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-            \TYPO3\CMS\Core\Information\Typo3Version::class
-        )->getBranch();
-    } else {
-        $typo3Branch = TYPO3_branch;
-    }
-
-    // Since TYPO3 v10.2, all signal slots have been migrated to PSR-14 events.
-    // Only configure the deprecated signal slots in TYPO3 v8 and v9.
-    if (version_compare($typo3Branch, '10.4', '<')) {
-        /* @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher $signalSlotDispatcher */
-        $signalSlotDispatcher = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-            \TYPO3\CMS\Extbase\SignalSlot\Dispatcher::class
-        );
-
-        /*
-         * In https://github.com/TYPO3/TYPO3.CMS/blob/v8.7.9/typo3/sysext/filelist/Classes/FileList.php#L742 a
-         * processed file for a preview thumbnail uses an empty configuration array whereas 64x64 is stored in the
-         * database and causes a miss and a thumbnail being generated over and over.
-         *
-         * @deprecated This signal slot is only necessary for TYPO# v8, because in TYPO3 v9+ the dimensions are
-         * passed from within the configuration
-         */
-        if (version_compare($typo3Branch, '9.0', '<')) {
-            $signalSlotDispatcher->connect(
-                \TYPO3\CMS\Core\Resource\ResourceStorage::class,
-                'preFileProcess',
-                \MaxServ\FalS3\Processing\ImagePreviewConfiguration::class,
-                'onPreFileProcess'
-            );
-        }
-
-        // cache control, trigger an update of remote objects if a change is made locally (eg. by running the scheduler)
-        $signalSlotDispatcher->connect(
-            \TYPO3\CMS\Core\Resource\Index\MetaDataRepository::class,
-            'recordUpdated',
-            \MaxServ\FalS3\CacheControl\RemoteObjectUpdateCacheControl::class,
-            'onLocalMetadataRecordUpdatedOrCreated'
-        );
-
-        $signalSlotDispatcher->connect(
-            \TYPO3\CMS\Core\Resource\Index\MetaDataRepository::class,
-            'recordCreated',
-            \MaxServ\FalS3\CacheControl\RemoteObjectUpdateCacheControl::class,
-            'onLocalMetadataRecordUpdatedOrCreated'
-        );
-
-        $signalSlotDispatcher->connect(
-            \TYPO3\CMS\Core\Resource\ResourceStorage::class,
-            'postFileProcess',
-            \MaxServ\FalS3\CacheControl\RemoteObjectUpdateCacheControl::class,
-            'onPostFileProcess'
-        );
-    }
-
     // Register cache 'tx_fal_s3'
     if (!isset($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3']['groups'])) {
         $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3']['groups'] = [
@@ -134,6 +78,14 @@ call_user_func(function () {
         // phpcs:enable
     }
 
+    if (class_exists(\TYPO3\CMS\Core\Information\Typo3Version::class)) {
+        $typo3Branch = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+            \TYPO3\CMS\Core\Information\Typo3Version::class
+        )->getBranch();
+    } else {
+        $typo3Branch = TYPO3_branch;
+    }
+
     // Since TYPO3 v11.4, the ClearCacheActionsHookInterface has been deprecated and has been migrated to a PSR-14 event
     // Register additional clear cache menu item
     if (version_compare($typo3Branch, '11.5', '<')) {
@@ -155,4 +107,4 @@ call_user_func(function () {
         $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['additionalBackendItems']['cacheActions'][\MaxServ\FalS3\Toolbar\ToolbarItem::ITEM_KEY]
             = \MaxServ\FalS3\Toolbar\ToolbarItem::class;
     }
-});
+})();
