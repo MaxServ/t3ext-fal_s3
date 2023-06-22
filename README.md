@@ -21,10 +21,11 @@ All we needed to care about was the concept of remote file storage and working w
 
 ## Versions and support
 
-| Fal S3 | TYPO3      | PHP       | Support / Development                |
-|--------|------------|-----------|--------------------------------------|
-| master | 6.2 - 10.4 | 5.6 - 7.4 | Features, Bugfixes, Security Updates |
-| 1.x    | 6.2 - 10.4 | 5.6 - 7.4 | Features, Bugfixes, Security Updates |
+| Fal S3 | TYPO3       | PHP       | Support / Development                |
+|--------|-------------|-----------|--------------------------------------|
+| master | 10.4 - 12.4 | 7.2 - 8.2 | Features, Bugfixes, Security Updates |
+| 2.x    | 10.4 - 12.4 | 7.2 - 8.2 | Features, Bugfixes, Security Updates |
+| 1.x    | 6.2 - 10.4  | 5.6 - 7.4 | Security Updates, Priority Bugfixes  |
 
 ## Changelog
 
