@@ -78,13 +78,8 @@ defined('TYPO3_MODE') or die();
         // phpcs:enable
     }
 
-    if (class_exists(\TYPO3\CMS\Core\Information\Typo3Version::class)) {
-        $typo3Branch = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-            \TYPO3\CMS\Core\Information\Typo3Version::class
-        )->getBranch();
-    } else {
-        $typo3Branch = TYPO3_branch;
-    }
+    $typo3Branch = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Information\Typo3Version::class)
+        ->getBranch();
 
     // Since TYPO3 v11.4, the ClearCacheActionsHookInterface has been deprecated and has been migrated to a PSR-14 event
     // Register additional clear cache menu item
