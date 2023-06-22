@@ -13,16 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - `.gitignore` structure to only include specified files
-- Load `ImagePreviewConfiguration` signal slot in TYPO3 v8 only, since the preview dimensions are fetched from TSconfig in TYPO3 v9+
-- Refactored `ToolbarItem` hook implementation for TYPO3 v8, v9 and v10 to extend the newly implemented `FlushCacheActionEvent` so these share the same code base
-- Refactored `RemoteObjectUpdate` signal slot implementation for TYPO3 v8 and v9 to extend the newly implemented `RemoteObjectUpdateEvent` so these share the same code base
+- Refactored `ToolbarItem` hook implementation for TYPO3 v10 to extend the newly implemented `FlushCacheActionEvent` so these share the same code base
 - Refactored `AmazonS3Driver` to use the `MimeType::fromExtension` method instead of the removed `mimetype_from_extension` function
 - Simplified `AmazonS3Driver` methods `processConfiguration` and `initialize` to make it better to read, debug and test
-- Minimum version of `php` to v7.1
+- Minimum version of `php` to v7.2
 - Minimum version of `aws/aws-sdk-php` to v3.199 to match TYPO3 requirements
 
 ### Removed
-- TYPO3 v6 and v7 compatibility
+- TYPO3 v6, v7, v8 and v9 compatibility
 - `RecordMonitor` class since this has been replaced by the `ImageDimensionsExtraction` extractor but was kept for backwards compatibility
 
 ## [1.14.2] - 2023-09-30
