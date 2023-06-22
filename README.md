@@ -18,3 +18,14 @@ All we needed to care about was the concept of remote file storage and working w
 
 * [Introduction](/Documentation/Introduction/Index.rst)
 * [Administrator Manual](/Documentation/AdministratorManual/Index.rst)
+
+## Versions and support
+
+| Fal S3 | TYPO3      | PHP       | Support / Development                |
+|--------|------------|-----------|--------------------------------------|
+| master | 6.2 - 10.4 | 5.6 - 7.4 | Features, Bugfixes, Security Updates |
+| 1.x    | 6.2 - 10.4 | 5.6 - 7.4 | Features, Bugfixes, Security Updates |
+
+## Changelog
+
+Please look into the [CHANGELOG.md](CHANGELOG.md)
