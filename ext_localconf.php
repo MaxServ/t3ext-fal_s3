@@ -1,6 +1,7 @@
 <?php
 
-defined('TYPO3_MODE') or die();
+/** TYPO3_MODE check is still here for compatibility for TYPO3 v10 */
+(defined('TYPO3') || defined('TYPO3_MODE')) || die();
 
 (static function () {
     /** @var \TYPO3\CMS\Core\Resource\Driver\DriverRegistry $driverRegistry */
@@ -91,7 +92,7 @@ defined('TYPO3_MODE') or die();
         );
 
         $iconRegistry->registerIcon(
-            \MaxServ\FalS3\Toolbar\ToolbarItem::ITEM_ICON_IDENTIFIER,
+            \MaxServ\FalS3\Resource\Event\FlushCacheActionEvent::ITEM_ICON_IDENTIFIER,
             \TYPO3\CMS\Core\Imaging\IconProvider\SvgIconProvider::class,
             [
                 'source' => 'EXT:fal_s3/Resources/Public/Icons/FlushCache.svg'
