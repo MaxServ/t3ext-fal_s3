@@ -1141,6 +1141,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         return [
             'identifier' => $folderIdentifier,
             'name' => basename($folderIdentifier),
+            // S3 does not implement mtime or ctime on 'folder' objects. To prevent warnings, just return 0 as timestamp
+            'mtime' => 0,
+            'ctime' => 0,
             'storage' => $this->storageUid
         ];
     }
