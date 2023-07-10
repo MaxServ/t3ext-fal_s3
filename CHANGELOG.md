@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PSR-14 `RemoteObjectUpdateEvent` to set remote object cache for after a file has been uploaded, replaced or processed (TYPO3 v10+)
 - New Icons API implementation for the S3 driver icons (TYPO3 v11+)
 - Strict typing in classes and methods if possible
+- Implemented the `DriverInterface::sanitizeFileName` method, so we escape invalid characters in folder and file names (resolves [#56](https://github.com/MaxServ/t3ext-fal_s3/issues/56))
 
 ### Changed
 - `.gitignore` structure to only include specified files

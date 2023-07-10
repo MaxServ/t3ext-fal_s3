@@ -29,6 +29,7 @@ use TYPO3\CMS\Core\Resource\Driver\StreamableDriverInterface;
 use TYPO3\CMS\Core\Resource\Exception\ExistingTargetFileNameException;
 use TYPO3\CMS\Core\Resource\Exception\ExistingTargetFolderException;
 use TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException;
+use TYPO3\CMS\Core\Resource\Exception\InvalidFileNameException;
 use TYPO3\CMS\Core\Resource\Exception\InvalidPathException;
 use TYPO3\CMS\Core\Resource\FileInterface;
 use TYPO3\CMS\Core\Resource\Folder;
@@ -1364,6 +1365,27 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
                 'Cache-Control' => '',
             ]
         );
+    }
+
+    /**
+     * @param $fileName
+     * @param $charset
+     * @return string
+     * @throws InvalidFileNameException
+     */
+    public function sanitizeFileName($fileName, $charset = '')
+    {
+        $cleanFileName = (string)preg_replace('/[^a-zA-Z0-9\-\._]/', '_', trim($fileName));
+
+        $cleanFileName = rtrim($cleanFileName, '.');
+        if ($cleanFileName === '') {
+            throw new InvalidFileNameException(
+                'File name ' . $fileName . ' is invalid.',
+                1320288991
+            );
+        }
+
+        return $cleanFileName;
     }
 
     /**
