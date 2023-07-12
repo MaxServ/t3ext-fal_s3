@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxServ\FalS3\Driver;
 
 /*
@@ -17,6 +19,7 @@ namespace MaxServ\FalS3\Driver;
 
 use Aws\LruArrayCache;
 use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException;
 use TYPO3\CMS\Core\Cache\Frontend\VariableFrontend;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -27,8 +30,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * to prevent excessive S3 API calls a simple file is stored
  * locally, using some kind of memory based backend could
  * improve performance even more.
- *
- * @package MaxServ\FalS3\Driver
  */
 class Cache extends LruArrayCache
 {
@@ -43,6 +44,7 @@ class Cache extends LruArrayCache
      * @param string $key Key to retrieve.
      *
      * @return mixed|null Returns the value or null if not found.
+     * @throws NoSuchCacheException
      */
     public function get($key)
     {
@@ -64,10 +66,9 @@ class Cache extends LruArrayCache
      * @param string $key Key to set
      * @param mixed $value Value to set.
      * @param int $ttl In seconds, 0 = unlimited
-     *
-     * @return void
+     * @throws NoSuchCacheException
      */
-    public function set($key, $value, $ttl = 0)
+    public function set($key, $value, $ttl = 0): void
     {
         $key = rtrim($key, '/');
         $cacheFrontend = self::getCacheFrontend();
@@ -82,10 +83,9 @@ class Cache extends LruArrayCache
      * Remove a cache key.
      *
      * @param string $key Key to remove.
-     *
-     * @return void
+     * @throws NoSuchCacheException
      */
-    public function remove($key)
+    public function remove($key): void
     {
         $key = rtrim($key, '/');
         $cacheFrontend = self::getCacheFrontend();
@@ -102,20 +102,22 @@ class Cache extends LruArrayCache
      *
      * @return string
      */
-    public static function buildEntryIdentifier($key, $prefix = 'fi')
+    public static function buildEntryIdentifier(string $key, string $prefix = 'fi'): string
     {
         return $prefix . '-' . md5($key);
     }
 
     /**
      * @return VariableFrontend
+     * @throws NoSuchCacheException
      */
-    public static function getCacheFrontend()
+    public static function getCacheFrontend(): VariableFrontend
     {
-        if (
-            self::$cacheFrontend === null
-            && !empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3'])
-        ) {
+        if (empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3'])) {
+            throw new NoSuchCacheException('Missing cache configuration for tx_fal_s3 extension', 1655459397);
+        }
+
+        if (self::$cacheFrontend === null) {
             $cacheManager = GeneralUtility::makeInstance(CacheManager::class);
             $cacheManager->setCacheConfigurations($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
             self::$cacheFrontend = $cacheManager->getCache('tx_fal_s3');

@@ -1,38 +1,48 @@
 # Changelog
-
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2023-07-12
+### Added
+- PSR-14 `FlushCacheActionEvent` to add the cache flush action item (TYPO3 v11+)
+- PSR-14 `RemoteObjectUpdateEvent` to set remote object cache for after a file has been uploaded, replaced or processed (TYPO3 v10+)
+- New Icons API implementation for the S3 driver icons (TYPO3 v11+)
+- Strict typing in classes and methods if possible
+- Implemented the `DriverInterface::sanitizeFileName` method, so we escape invalid characters in folder and file names (resolves [#56](https://github.com/MaxServ/t3ext-fal_s3/issues/56))
+
+### Changed
+- `.gitignore` structure to only include specified files
+- Refactored `ToolbarItem` hook implementation for TYPO3 v10 to extend the newly implemented `FlushCacheActionEvent` so these share the same code base
+- Refactored `AmazonS3Driver` to use the `MimeType::fromExtension` method instead of the removed `mimetype_from_extension` function
+- Simplified `AmazonS3Driver` methods `processConfiguration` and `initialize` to make it better to read, debug and test
+- Minimum version of `php` to v7.2
+- Minimum version of `aws/aws-sdk-php` to v3.199 to match TYPO3 requirements
+
+### Removed
+- TYPO3 v6, v7, v8 and v9 compatibility
+- `RecordMonitor` class since this has been replaced by the `ImageDimensionsExtraction` extractor but was kept for backwards compatibility
+
 ## [1.14.2] - 2023-09-30
 ### Fixed
-- Error when TYPO3_REQUEST is null 
+- Error when TYPO3_REQUEST is null
 
 ## [1.14.1] - 2023-03-29
-
 ### Fixed
-
 - 'Replace' option in the filelist didn't work due to excessive caching
 
 ## [1.14.0] - 2022-09-30
-
 ### Added
-
 - Caching to `countFilesInFolder` and `countFoldersInFolder` methods
 
 ## [1.13.3] - 2022-09-07
-
 ### Fixed
-
 - Prevent filelist exception when a directory contains a file of type 'Octet-stream' + directory with the same name
 
 ## [1.13.2] - 2022-08-05
-
 ### Fixed
-
-- Partly reverted 1.13.1, since it caused performance issues. The calls to `is_file` in `AmazonS3Driver::fileExists`
-  were cached by the StreamWrapper (`StreamWrapper::url_stat`). HeadObject calls however are not cached.
+- Partly reverted 1.13.1, since it caused performance issues. The calls to `is_file` in `AmazonS3Driver::fileExists` were cached by the StreamWrapper (`StreamWrapper::url_stat`). HeadObject calls however are not cached.
 
 ## [1.13.1] - 2022-06-20
 ### Fixed

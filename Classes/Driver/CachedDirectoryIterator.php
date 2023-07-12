@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxServ\FalS3\Driver;
 
 /*
@@ -19,7 +21,6 @@ use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 
 /**
  * Class CachedDirectoryIterator
- * @package MaxServ\FalS3\Driver
  */
 class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
 {
@@ -84,7 +85,7 @@ class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
     /**
      * Initialize CachedDirectoryIterator
      */
-    private function initialize()
+    private function initialize(): void
     {
         $cacheEntryIdentifier = Cache::buildEntryIdentifier(
             $this->path,
@@ -107,18 +108,18 @@ class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
     }
 
     /**
-     * @param int $position
+     * @param int $offset
      * @see \SeekableIterator::seek()
      */
-    public function seek($position)
+    public function seek($offset): void
     {
-        $this->currentIndex = $position;
+        $this->currentIndex = $offset;
     }
 
     /**
      * @see Iterator::valid()
      */
-    public function valid()
+    public function valid(): bool
     {
         return isset($this->filesAndFolders[$this->currentIndex]);
     }
@@ -126,7 +127,7 @@ class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
     /**
      * @see Iterator::rewind()
      */
-    public function rewind()
+    public function rewind(): void
     {
         $this->currentIndex = 0;
     }
@@ -134,7 +135,7 @@ class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
     /**
      * @see Iterator::next()
      */
-    public function next()
+    public function next(): void
     {
         $this->currentIndex++;
     }
@@ -142,7 +143,7 @@ class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
     /**
      * @see \RecursiveIterator::hasChildren()
      */
-    public function hasChildren()
+    public function hasChildren(): bool
     {
         return substr($this->filesAndFolders[$this->currentIndex], -1) === '/';
     }
@@ -150,7 +151,7 @@ class CachedDirectoryIterator implements \RecursiveIterator, \SeekableIterator
     /**
      * @see \RecursiveIterator::getChildren()
      */
-    public function getChildren()
+    public function getChildren(): CachedDirectoryIterator
     {
         return new self(
             $this->path . basename($this->filesAndFolders[$this->currentIndex]) . '/',

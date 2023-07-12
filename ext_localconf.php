@@ -1,8 +1,9 @@
 <?php
 
-defined('TYPO3_MODE') or die();
+/** TYPO3_MODE check is still here for compatibility for TYPO3 v10 */
+(defined('TYPO3') || defined('TYPO3_MODE')) || die();
 
-call_user_func(function () {
+(static function () {
     /** @var \TYPO3\CMS\Core\Resource\Driver\DriverRegistry $driverRegistry */
     $driverRegistry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
         \TYPO3\CMS\Core\Resource\Driver\DriverRegistry::class
@@ -47,68 +48,6 @@ call_user_func(function () {
         ]
     ];
 
-    /* @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher $signalSlotDispatcher */
-    $signalSlotDispatcher = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-        \TYPO3\CMS\Extbase\SignalSlot\Dispatcher::class
-    );
-
-    $signalSlotDispatcher->connect(
-        \TYPO3\CMS\Core\Resource\Index\FileIndexRepository::class,
-        'recordUpdated',
-        \MaxServ\FalS3\MetaData\RecordMonitor::class,
-        'recordUpdatedOrCreated'
-    );
-
-    $signalSlotDispatcher->connect(
-        \TYPO3\CMS\Core\Resource\Index\FileIndexRepository::class,
-        'recordCreated',
-        \MaxServ\FalS3\MetaData\RecordMonitor::class,
-        'recordUpdatedOrCreated'
-    );
-
-    $signalSlotDispatcher->connect(
-        \TYPO3\CMS\Core\Resource\Index\MetaDataRepository::class,
-        'recordUpdated',
-        \MaxServ\FalS3\MetaData\RecordMonitor::class,
-        'recordUpdatedOrCreated'
-    );
-
-    $signalSlotDispatcher->connect(
-        \TYPO3\CMS\Core\Resource\Index\MetaDataRepository::class,
-        'recordCreated',
-        \MaxServ\FalS3\MetaData\RecordMonitor::class,
-        'recordUpdatedOrCreated'
-    );
-
-    $signalSlotDispatcher->connect(
-        \TYPO3\CMS\Core\Resource\ResourceStorage::class,
-        'preFileProcess',
-        \MaxServ\FalS3\Processing\ImagePreviewConfiguration::class,
-        'onPreFileProcess'
-    );
-
-    // cache control, trigger an update of remote objects if a changes is made locally (eg. by running the scheduler)
-    $signalSlotDispatcher->connect(
-        \TYPO3\CMS\Core\Resource\Index\MetaDataRepository::class,
-        'recordUpdated',
-        \MaxServ\FalS3\CacheControl\RemoteObjectUpdater::class,
-        'onLocalMetadataRecordUpdatedOrCreated'
-    );
-
-    $signalSlotDispatcher->connect(
-        \TYPO3\CMS\Core\Resource\Index\MetaDataRepository::class,
-        'recordCreated',
-        \MaxServ\FalS3\CacheControl\RemoteObjectUpdater::class,
-        'onLocalMetadataRecordUpdatedOrCreated'
-    );
-
-    $signalSlotDispatcher->connect(
-        \TYPO3\CMS\Core\Resource\ResourceStorage::class,
-        'postFileProcess',
-        \MaxServ\FalS3\CacheControl\RemoteObjectUpdater::class,
-        'onPostFileProcess'
-    );
-
     // Register cache 'tx_fal_s3'
     if (!isset($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3']['groups'])) {
         $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3']['groups'] = [
@@ -117,7 +56,7 @@ call_user_func(function () {
     }
 
     // register extractor
-    \TYPO3\CMS\Core\Resource\Index\ExtractorRegistry::getInstance()
+    \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Resource\Index\ExtractorRegistry::class)
         ->registerExtractionService(\MaxServ\FalS3\Service\Extraction\ImageDimensionsExtraction::class);
 
     if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('extractor')) {
@@ -140,17 +79,12 @@ call_user_func(function () {
         // phpcs:enable
     }
 
+    $typo3Branch = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Information\Typo3Version::class)
+        ->getBranch();
 
-    if (class_exists(\TYPO3\CMS\Core\Information\Typo3Version::class)) {
-        $typo3Branch = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-            \TYPO3\CMS\Core\Information\Typo3Version::class
-        )->getBranch();
-    } else {
-        $typo3Branch = TYPO3_branch;
-    }
-
-    // Adding the ToolbarItem only works on reliable on TYPO3 v8 and higher
-    if (version_compare($typo3Branch, '8.0', '>=')) {
+    // Since TYPO3 v11.4, the ClearCacheActionsHookInterface has been deprecated and has been migrated to a PSR-14 event
+    // Register additional clear cache menu item
+    if (version_compare($typo3Branch, '11.5', '<')) {
         // Register icon for FalS3 flush cache menu item
         /** @var \TYPO3\CMS\Core\Imaging\IconRegistry $iconRegistry */
         $iconRegistry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
@@ -158,14 +92,15 @@ call_user_func(function () {
         );
 
         $iconRegistry->registerIcon(
-            \MaxServ\FalS3\Toolbar\ToolbarItem::ITEM_ICON_IDENTIFIER,
+            \MaxServ\FalS3\Resource\Event\FlushCacheActionEvent::ITEM_ICON_IDENTIFIER,
             \TYPO3\CMS\Core\Imaging\IconProvider\SvgIconProvider::class,
             [
                 'source' => 'EXT:fal_s3/Resources/Public/Icons/FlushCache.svg'
             ]
         );
 
-        // Register additional clear cache menu item
-        $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['additionalBackendItems']['cacheActions'][\MaxServ\FalS3\Toolbar\ToolbarItem::ITEM_KEY] = \MaxServ\FalS3\Toolbar\ToolbarItem::class;
+        // phpcs:ignore
+        $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['additionalBackendItems']['cacheActions'][\MaxServ\FalS3\Toolbar\ToolbarItem::ITEM_KEY]
+            = \MaxServ\FalS3\Toolbar\ToolbarItem::class;
     }
-});
+})();

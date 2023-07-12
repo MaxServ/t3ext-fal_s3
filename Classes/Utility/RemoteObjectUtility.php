@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxServ\FalS3\Utility;
 
 /*
@@ -17,14 +19,12 @@ namespace MaxServ\FalS3\Utility;
 
 use Aws\S3\S3Client;
 use Aws\S3\S3ClientInterface;
-use MaxServ\FalS3;
 use MaxServ\FalS3\Driver\AmazonS3Driver;
 use TYPO3\CMS\Core\Resource\AbstractFile;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
 
 /**
  * Class RemoteObjectUtility
- * @package MaxServ\FalS3\Utility
  */
 class RemoteObjectUtility
 {
@@ -43,7 +43,7 @@ class RemoteObjectUtility
      *
      * @return S3ClientInterface|null
      */
-    public static function resolveClientForStorage(ResourceStorage $storage)
+    public static function resolveClientForStorage(ResourceStorage $storage): ?S3ClientInterface
     {
         $client = null;
         $storageIdentifier = $storage->getUid();
@@ -75,7 +75,7 @@ class RemoteObjectUtility
      *
      * @return array
      */
-    public static function resolveDriverConfigurationForStorage(ResourceStorage $storage)
+    public static function resolveDriverConfigurationForStorage(ResourceStorage $storage): array
     {
         $driverConfiguration = [];
         $storageIdentifier = $storage->getUid();
@@ -86,6 +86,7 @@ class RemoteObjectUtility
             $storageConfiguration = $storage->getConfiguration();
 
             if (array_key_exists('configurationKey', $storageConfiguration)) {
+                // phpcs:ignore
                 $driverConfiguration = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'][$storageConfiguration['configurationKey']];
             }
 
@@ -104,7 +105,7 @@ class RemoteObjectUtility
      *
      * @return string
      */
-    public static function resolveCacheControlDirectivesForFile(AbstractFile $file, $isProcessed = false)
+    public static function resolveCacheControlDirectivesForFile(AbstractFile $file, bool $isProcessed = false): string
     {
         $cacheControl = [];
         $directives = null;
