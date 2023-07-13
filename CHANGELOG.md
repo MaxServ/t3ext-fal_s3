@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [UNRELEASED]
+### Fixed
+- Some file action methods fail because the check if a file or folder is too generic. Each action needs its own checks on existing files or folders.
+
 ## [2.0.0] - 2023-07-12
 ### Added
 - PSR-14 `FlushCacheActionEvent` to add the cache flush action item (TYPO3 v11+)

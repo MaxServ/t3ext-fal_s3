@@ -312,6 +312,8 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
      * @param bool $recursive
      * @return string the Identifier of the new folder
      * @throws NoSuchCacheException
+     * @throws InvalidFileNameException
+     * @throws InvalidPathException
      * @throws ExistingTargetFolderException
      */
     public function createFolder($newFolderName, $parentFolderIdentifier = '', $recursive = false): string
@@ -328,7 +330,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         }
         $identifier = $this->canonicalizeAndCheckFolderIdentifier($parentFolderIdentifier . $newFolderName . '/');
 
-        $this->checkFolderExists($identifier);
+        if ($this->fileExists($identifier)) {
+            throw new ExistingTargetFolderException('A file with the name of the created folder already exists', 1689241878);
+        }
 
         $path = $this->getStreamWrapperPath($identifier);
 
@@ -356,7 +360,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
      * @param string $newName
      * @return array A map of old to new file identifiers of all affected resources
      * @throws InvalidPathException
+     * @throws InvalidFileNameException
      * @throws NoSuchCacheException
+     * @throws ExistingTargetFileNameException
      * @throws ExistingTargetFolderException
      */
     public function renameFolder($folderIdentifier, $newName): array
@@ -377,7 +383,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
 
         $newIdentifier = $this->canonicalizeAndCheckFolderIdentifier($parentFolderName . $newName . '/');
 
-        $this->checkFolderExists($newIdentifier);
+        if ($this->fileExists($newIdentifier) || $this->folderExists($newIdentifier)) {
+            throw new ExistingTargetFileNameException('A file or folder with the name of the moved folder already exists', 1689242245);
+        }
 
         return $this->moveFolderWithinStorage($folderIdentifier, $newIdentifier, '');
     }
@@ -499,7 +507,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
             . $this->canonicalizeAndCheckFileIdentifier($newFileName);
         $targetFilePath = $this->getStreamWrapperPath($targetFileIdentifier);
 
-        $this->checkFileExists($targetFileIdentifier);
+        if ($this->folderExists($targetFileIdentifier)) {
+            throw new ExistingTargetFileNameException('A folder with the name of the added file already exists', 1689242007);
+        }
 
         copy($localFilePath, $targetFilePath);
 
@@ -530,7 +540,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
             . $this->canonicalizeAndCheckFileIdentifier($fileName);
         $absolutePath = $this->getStreamWrapperPath($targetFileIdentifier);
 
-        $this->checkFileExists($targetFileIdentifier);
+        if ($this->folderExists($targetFileIdentifier)) {
+            throw new ExistingTargetFileNameException('A folder with the name of the created file already exists', 1689242076);
+        }
 
         // create an empty file using the putObject method instead of the wrapper
         // file_put_contents() without data or touch() yield unexpected results
@@ -569,7 +581,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         $sourcePath = $this->getStreamWrapperPath($fileIdentifier);
         $targetPath = $this->getStreamWrapperPath($targetFileIdentifier);
 
-        $this->checkFileExists($targetFileIdentifier);
+        if ($this->folderExists($targetFileIdentifier)) {
+            throw new ExistingTargetFileNameException('A folder with the name of the copied file already exists', 1689242141);
+        }
 
         copy($sourcePath, $targetPath);
 
@@ -607,7 +621,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
 
         $newIdentifier = $this->canonicalizeAndCheckFileIdentifier($parentFolderName . $newName);
 
-        $this->checkFileExists($newIdentifier);
+        if ($this->fileExists($newIdentifier) || $this->folderExists($newIdentifier)) {
+            throw new ExistingTargetFileNameException('A file or folder with the name of the renamed file already exists');
+        }
 
         $oldPath = $this->getStreamWrapperPath($fileIdentifier);
         $newPath = $this->getStreamWrapperPath($newIdentifier);
@@ -721,7 +737,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
         $targetFileIdentifier = $this->canonicalizeAndCheckFileIdentifier($targetFolderIdentifier . $newFileName);
 
-        $this->checkFileExists($targetFileIdentifier);
+        if ($this->folderExists($targetFileIdentifier)) {
+            throw new ExistingTargetFileNameException('A folder with the name of the moved file already exists', 1689242183);
+        }
 
         $sourcePath = $this->getStreamWrapperPath($fileIdentifier);
         $targetPath = $this->getStreamWrapperPath($targetFileIdentifier);
@@ -751,7 +769,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         $sourceFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($sourceFolderIdentifier);
         $targetFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($targetFolderIdentifier . $newFolderName);
 
-        $this->checkFolderExists($targetFolderIdentifier);
+        if ($this->fileExists($targetFolderIdentifier) || $this->folderExists($targetFolderIdentifier)) {
+            throw new ExistingTargetFolderException('A file or folder with the name of the moved folder already exists', 1689242245);
+        }
 
         $oldPath = $this->getStreamWrapperPath($sourceFolderIdentifier);
         $newPath = $this->getStreamWrapperPath($targetFolderIdentifier);
@@ -802,7 +822,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
      * @return bool
      * @throws InvalidPathException
      * @throws NoSuchCacheException
-     * @throws ExistingTargetFolderException
+     * @throws ExistingTargetFileNameException
      */
     public function copyFolderWithinStorage($sourceFolderIdentifier, $targetFolderIdentifier, $newFolderName): bool
     {
@@ -812,7 +832,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
 
         $sourceDirectoryContents = $this->resolveFolderEntries($sourceFolderIdentifier, true, true, true);
 
-        $this->checkFolderExists($targetFolderIdentifier);
+        if ($this->fileExists($targetFolderIdentifier) || $this->folderExists($targetFolderIdentifier)) {
+            throw new ExistingTargetFileNameException('A file or folder with the name of the copied folder already exists');
+        }
 
         /**
          * Make sure the target folder exists before trying to copy folders.
@@ -1670,35 +1692,5 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
 
         // see resolveFolderEntries(), cache entries are tagged with the path of the parent folder
         Cache::getCacheFrontend()->flushByTag(Cache::buildEntryIdentifier($path, 'd'));
-    }
-
-    /**
-     * @throws ExistingTargetFileNameException
-     */
-    protected function checkFileExists(string $fileIdentifier)
-    {
-        /**
-         * The ExtendedFileUtility wraps the upload method in func_upload and catches a ExistingTargetFileNameException
-         * If a file or folder with the name alreadu exists, we would like to show the error message flash message
-         * The ExistingTargetFolderNameException is not being catched by the func_upload and throws an exception
-         */
-        if ($this->fileExists($fileIdentifier) || $this->folderExists($fileIdentifier)) {
-            throw new ExistingTargetFileNameException();
-        }
-    }
-
-    /**
-     * @throws ExistingTargetFolderException
-     */
-    protected function checkFolderExists(string $fileIdentifier): void
-    {
-        /**
-         * The ExtendedFileUtility wraps the upload method in func_upload and catches a ExistingTargetFileNameException
-         * If a file or folder with the name alreadu exists, we would like to show the error message flash message
-         * The ExistingTargetFolderNameException is not being catched by the func_upload and throws an exception
-         */
-        if ($this->fileExists($fileIdentifier) || $this->folderExists($fileIdentifier)) {
-            throw new ExistingTargetFolderException();
-        }
     }
 }
