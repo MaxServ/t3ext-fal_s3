@@ -1397,7 +1397,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
      */
     public function sanitizeFileName($fileName, $charset = '')
     {
-        $cleanFileName = (string)preg_replace('/[^a-zA-Z0-9\-\._]/', '_', trim($fileName));
+        // Allow letters, numbers, underscores, dashes, dots, parentheses and spaces.
+        // Replace all other characters with an underscore.
+        $cleanFileName = (string)preg_replace('/[^a-zA-Z0-9\-\._() ]/', '_', trim($fileName));
 
         $cleanFileName = rtrim($cleanFileName, '.');
         if ($cleanFileName === '') {
