@@ -18,6 +18,7 @@
 !/Configuration/FlexForm
 !/Configuration/FlexForm/*.xml
 !/Configuration/Icons.php
+!/Configuration/RequestMiddlewares.php
 !/Configuration/Services.yaml
 
 # Documentation
@@ -48,6 +49,8 @@
 !/Classes/Controller/*.php
 !/Classes/Driver
 !/Classes/Driver/*.php
+!/Classes/Middleware
+!/Classes/Middleware/*.php
 !/Classes/Resource
 !/Classes/Resource/Event
 !/Classes/Resource/Event/*.php
