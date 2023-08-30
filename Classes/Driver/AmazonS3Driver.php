@@ -1395,12 +1395,15 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
      * @return string
      * @throws InvalidFileNameException
      */
-    public function sanitizeFileName($fileName, $charset = '')
+    public function sanitizeFileName($fileName, $charset = 'utf-8')
     {
-        // Allow letters, numbers, underscores, dashes, dots, parentheses and spaces.
-        // Replace all other characters with an underscore.
-        $cleanFileName = (string)preg_replace('/[^a-zA-Z0-9\-\._() ]/', '_', trim($fileName));
+        if ($charset === 'utf-8') {
+            $fileName = \Normalizer::normalize((string)$fileName) ?: $fileName;
+        }
 
+        // Unlike the LocalDriver, we don't need an exception for UTF-8 here since we use S3 as storage.
+        // Strip the filename from unwanted characters, replace them with an underscore
+        $cleanFileName = (string)preg_replace('/[#$%^&*+=\[\]\'`;,\/{}|":<>?~\\\\]/', '_', trim($fileName));
         $cleanFileName = rtrim($cleanFileName, '.');
         if ($cleanFileName === '') {
             throw new InvalidFileNameException(
