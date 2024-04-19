@@ -61,7 +61,7 @@ class RemoteObjectUpdateEvent
      */
     public function afterFileProcessing(AfterFileProcessingEvent $event): void
     {
-        if (!$event->getProcessedFile()->exists()) {
+        if (!$event->getProcessedFile()->exists() || $event->getProcessedFile()->usesOriginalFile()) {
             return;
         }
 
