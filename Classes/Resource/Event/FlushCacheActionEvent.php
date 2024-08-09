@@ -42,7 +42,7 @@ class FlushCacheActionEvent
     protected function isCacheItemAvailable(): bool
     {
         return $this->getBackendUser()->isAdmin()
-            || $this->getBackendUser()->getTSConfig()['options.']['clearCache.'][self::ITEM_KEY] ?? false;
+            || ($this->getBackendUser()->getTSConfig()['options.']['clearCache.'][self::ITEM_KEY] ?? false);
     }
 
     /**

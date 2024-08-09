@@ -434,7 +434,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         );
 
         /** @var \TYPO3\CMS\Core\Http\ServerRequest $request */
-        $request = $GLOBALS['TYPO3_REQUEST'];
+        $request = $GLOBALS['TYPO3_REQUEST'] ?? null;
         $modifyingRequestMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
         // Prevent duplicate calls to redis (e.g. in the filelist, which calls fileExists _a lot_ for the same file)
         // by caching the result in memory.
