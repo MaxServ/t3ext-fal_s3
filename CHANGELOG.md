@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2024-10-25
+### Added
+- Support for php 8.3
+
+### Changed
+- Updated `aws/aws-sdk-php` dependency requirement from 3.269.1 to 3.324.5 to make sure a non-vulnerable version of the sdk is being used
+
 ## [2.1.2] - 2024-08-09
 ### Fixed
 - Prevent undefined array key access
