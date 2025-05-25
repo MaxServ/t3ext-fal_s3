@@ -34,8 +34,9 @@ Add the following snippet to your :code:`AdditionalConfiguration.php` and adjust
 .. code-block:: php
 
 	$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations']['contentStorage'] = array(
-		'basePath' => '/{$FOLDER_PREFIX}/'
+		'basePath' => '/{$FOLDER_PREFIX}/',
 		'bucket' => 's3://{$BUCKET_NAME}',
+		'endpoint' => '{$S3_ENDPOINT}',
 		'excludedFolders' => ['Secret/Stash', 'SomethingElse'],
 		'key' => '{$IAM_KEY}',
 		'publicBaseUrl' => 'https://{$CF_DISTRIBUTION_ID}.cloudfront.net',
@@ -49,6 +50,7 @@ stored in the `File Storage` DB record so this record doesn't need to be changed
 
 	- `basePath` is used as a prefix (folder) to store files.
 	- `bucket` is the name of your S3 bucket.
+	- `endpoint` is the full URI of the webservie. This is only required if your provider is not AWS S3.
 	- `excludedFolders` is an array of folders that are present on S3, but should not be made available to TYPO3.
 	- `key` the Access Key ID provided by AWS (see the IAM console).
 	- `publicBaseUrl` is the URL of a CDN that will be used instead of :code:`https://{$BUCKET_NAME}.s3.amazonaws.com`.
