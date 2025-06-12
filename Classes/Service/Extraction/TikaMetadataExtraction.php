@@ -6,9 +6,6 @@ namespace MaxServ\FalS3\Service\Extraction;
 
 use MaxServ\FalS3\Driver\AmazonS3Driver;
 
-/**
- * Class TikaMetadataExtraction
- */
 class TikaMetadataExtraction extends \Causal\Extractor\Service\Extraction\TikaMetadataExtraction
 {
     /**

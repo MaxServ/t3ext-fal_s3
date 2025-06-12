@@ -1,60 +1,80 @@
-﻿.. ==================================================
-.. FOR YOUR INFORMATION
-.. --------------------------------------------------
-.. -*- coding: utf-8 -*- with BOM.
+﻿..  _start:
 
-.. include:: Includes.txt
-
-
-.. _start:
-
-=============================================================
+=================
 S3 driver for FAL
-=============================================================
+=================
 
-.. only:: html
+:Extension key:
+   fal_s3
 
-	:Classification:
-		fal_s3
+:Package name:
+   maxserv/fal_s3
 
-	:Version:
-		|release|
+:Version:
+   |release|
 
-	:Language:
-		en
+:Language:
+   en
 
-	:Description:
-		Connect FAL/TYPO3 to any of the configured S3 buckets with a few clicks.
-		File based configuration allows specific buckets depending on the context of your application.
+:Author:
+   MaxServ B.V.
 
-	:Keywords:
-		FAL, S3
+:License:
+   This document is published under the
+   `Open Publication License <https://www.opencontent.org/openpub/>`__.
 
-	:Copyright:
-		2015-2016
+:Rendered:
+   |today|
 
-	:Author:
-		Arno Schoon
+----
 
-	:Email:
-		arno@maxserv.com
+Connect FAL/TYPO3 to any of the configured S3 buckets with a few clicks.
 
-	:License:
-		This document is published under the Open Publication License
-		available from http://www.opencontent.org/openpub/
+----
 
-	:Rendered:
-		|today|
+..  card-grid::
+    :columns: 1
+    :columns-md: 2
+    :gap: 4
+    :class: pb-4
+    :card-height: 100
 
-	The content of this document is related to TYPO3,
-	a GNU/GPL CMS/Framework available from `www.typo3.org <https://typo3.org/>`__.
+    ..  card:: :ref:`Introduction <introduction>`
 
+        Introduction to the extension, general information.
 
-	**Table of Contents**
+    ..  card:: :ref:`Installation <installation>`
+
+        Learn how to install the extension using Composer.
+
+    ..  card:: :ref:`Configuration <configuration>`
+
+        How to configure the S3 buckets.
+
+    ..  card:: :ref:`Administration <administration>`
+
+        Learn how to configure the file storage(s) in the TYPO3 backend.
+
+    ..  card:: :ref:`Development <development>`
+
+        Information for developers, how to extend the extension and contribute.
+
+.. Table of Contents
 
 .. toctree::
-	:maxdepth: 3
-	:titlesonly:
+   :maxdepth: 2
+   :titlesonly:
+   :hidden:
 
-	Introduction/Index
-	AdministratorManual/Index
+   Introduction/Index
+   Installation/Index
+   Configuration/Index
+   Administration/Index
+   Development/Index
+
+.. Meta Menu
+
+.. toctree::
+   :hidden:
+
+   Sitemap

@@ -23,16 +23,22 @@
 
 # Documentation
 !/Documentation
-!/Documentation/AdministratorManual
-!/Documentation/AdministratorManual/*.rst
+!/Documentation/Administration
+!/Documentation/Administration/*.rst
+!/Documentation/Configuration
+!/Documentation/Configuration/*.rst
+!/Documentation/Development
+!/Documentation/Development/*.rst
 !/Documentation/Images
-!/Documentation/Images/AdministratorManual
-!/Documentation/Images/AdministratorManual/*.png
+!/Documentation/Images/Administration
+!/Documentation/Images/Administration/*.png
+!/Documentation/Installation
+!/Documentation/Installation/*.rst
 !/Documentation/Introduction
 !/Documentation/Introduction/*.rst
-!/Documentation/Includes.txt
+!/Documentation/guides.xml
 !/Documentation/Index.rst
-!/Documentation/Settings.yml
+!/Documentation/Sitemap.rst
 
 # Resources
 !/Resources
@@ -70,3 +76,23 @@
 
 # Build
 !/.travis.yml
+
+# DDEV Setup
+!/.ddev
+!/.ddev/*
+!/.ddev/apache/apache-site.conf
+!/.ddev/commands
+!/.ddev/commands/host
+!/.ddev/commands/host/*
+!/.ddev/commands/minio
+!/.ddev/commands/minio/*
+!/.ddev/commands/web
+!/.ddev/commands/web/*
+!/.ddev/web-build
+!/.ddev/web-build/*
+
+## Sitepackage for development purposes
+!/Build
+!/Build/extensions
+!/Build/extensions/sitepackage
+!/Build/extensions/sitepackage/**/*

@@ -4,45 +4,17 @@ declare(strict_types=1);
 
 namespace MaxServ\FalS3\Utility;
 
-/*
- * This file is part of the TYPO3 CMS project.
- *
- * It is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License, either version 2
- * of the License, or any later version.
- *
- * For the full copyright and license information, please read the
- * LICENSE.txt file that was distributed with this source code.
- *
- * The TYPO3 project - inspiring people to share!
- */
-
 use Aws\S3\S3Client;
 use Aws\S3\S3ClientInterface;
 use MaxServ\FalS3\Driver\AmazonS3Driver;
 use TYPO3\CMS\Core\Resource\AbstractFile;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
 
-/**
- * Class RemoteObjectUtility
- */
 class RemoteObjectUtility
 {
-    /**
-     * @var array
-     */
-    protected static $clients = [];
+    protected static array $clients = [];
+    protected static array $driverConfigurations = [];
 
-    /**
-     * @var array
-     */
-    protected static $driverConfigurations = [];
-
-    /**
-     * @param ResourceStorage $storage
-     *
-     * @return S3ClientInterface|null
-     */
     public static function resolveClientForStorage(ResourceStorage $storage): ?S3ClientInterface
     {
         $client = null;
@@ -70,11 +42,6 @@ class RemoteObjectUtility
         return $client;
     }
 
-    /**
-     * @param ResourceStorage $storage
-     *
-     * @return array
-     */
     public static function resolveDriverConfigurationForStorage(ResourceStorage $storage): array
     {
         $driverConfiguration = [];
@@ -91,7 +58,7 @@ class RemoteObjectUtility
             }
 
             // strip the s3 protocol prefix from the bucket name
-            if (strpos($driverConfiguration['bucket'], 's3://') === 0) {
+            if (str_starts_with($driverConfiguration['bucket'], 's3://')) {
                 $driverConfiguration['bucket'] = substr($driverConfiguration['bucket'], 5);
             }
         }
@@ -99,12 +66,6 @@ class RemoteObjectUtility
         return $driverConfiguration;
     }
 
-    /**
-     * @param AbstractFile $file
-     * @param bool $isProcessed
-     *
-     * @return string
-     */
     public static function resolveCacheControlDirectivesForFile(AbstractFile $file, bool $isProcessed = false): string
     {
         $cacheControl = [];
@@ -113,35 +74,20 @@ class RemoteObjectUtility
         $configurationKey = ($isProcessed ? 'processed-file:' : 'file:') . $file->getType();
         $driverConfiguration = self::resolveDriverConfigurationForStorage($file->getStorage());
 
-        if (
-            array_key_exists('cacheControl', $driverConfiguration)
-            && is_array($driverConfiguration['cacheControl'])
-            && array_key_exists($configurationKey, $driverConfiguration['cacheControl'])
-        ) {
+        if (isset($driverConfiguration['cacheControl'][$configurationKey])) {
             $directives = $driverConfiguration['cacheControl'][$configurationKey];
         }
 
-        if (
-            is_array($directives)
-            && ((array_key_exists('private', $directives) && $directives['private']))
-        ) {
+        if ($directives['private'] ?? false) {
             $cacheControl[] = 'private';
         }
 
-        if (
-            is_array($directives)
-            && array_key_exists('max-age', $directives)
-            && $directives['max-age'] > 0
-        ) {
+        if ((int)($directives['max-age'] ?? 0) > 0) {
             $cacheControl[] = 'max-age=' . (int)$directives['max-age'];
         }
 
         // if a no-store directive is set ignore earlier parts
-        if (
-            is_array($directives)
-            && array_key_exists('no-store', $directives)
-            && $directives['no-store']
-        ) {
+        if ($directives['no-store'] ?? false) {
             $cacheControl = ['no-store'];
         }
 

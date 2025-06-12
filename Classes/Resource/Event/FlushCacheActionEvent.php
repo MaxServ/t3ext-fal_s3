@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-// phpcs:ignore
 namespace MaxServ\FalS3\Resource\Event;
 
 use TYPO3\CMS\Backend\Backend\Event\ModifyClearCacheActionsEvent;
@@ -11,27 +10,20 @@ use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-/**
- * Class FlushS3CacheEvent
- */
 class FlushCacheActionEvent
 {
     public const ITEM_KEY = 'flushFalS3Cache';
     public const ITEM_ICON_IDENTIFIER = 'tx_fal_s3_flushcache';
 
-    /**
-     * Add the flush Fal S3 cache menu item
-     *
-     * @param ModifyClearCacheActionsEvent $event
-     */
     public function addClearCacheActions(ModifyClearCacheActionsEvent $event): void
     {
-        if ($this->isCacheItemAvailable()) {
-            $cacheActionConfiguration = $this->getCacheActionConfiguration();
-            if (!empty($cacheActionConfiguration)) {
-                $event->addCacheAction($cacheActionConfiguration);
-                $event->addCacheActionIdentifier(self::ITEM_KEY);
-            }
+        if (!$this->isCacheItemAvailable()) {
+            return;
+        }
+        $cacheActionConfiguration = $this->getCacheActionConfiguration();
+        if (!empty($cacheActionConfiguration)) {
+            $event->addCacheAction($cacheActionConfiguration);
+            $event->addCacheActionIdentifier(self::ITEM_KEY);
         }
     }
 
@@ -65,11 +57,6 @@ class FlushCacheActionEvent
         }
     }
 
-    /**
-     * Returns the current BE user.
-     *
-     * @return BackendUserAuthentication
-     */
     protected function getBackendUser(): BackendUserAuthentication
     {
         return $GLOBALS['BE_USER'];
