@@ -36,6 +36,7 @@ use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
 use TYPO3\CMS\Core\Resource\ResourceStorageInterface;
 use TYPO3\CMS\Core\Resource\StorageRepository;
+use TYPO3\CMS\Core\Type\File\FileInfo;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
@@ -1140,15 +1141,8 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
      */
     public function getFileMimeType(string $path): string
     {
-        $fileExtensionToMimeTypeMapping = $GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'];
-        $lowercaseFileExtension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-        $mimeType = MimeType::fromExtension($lowercaseFileExtension);
-
-        if ($mimeType === null && !empty($fileExtensionToMimeTypeMapping[$lowercaseFileExtension])) {
-            $mimeType = $fileExtensionToMimeTypeMapping[$lowercaseFileExtension];
-        }
-
-        return $mimeType ?? 'application/octet-stream';
+        $fileInfo = GeneralUtility::makeInstance(FileInfo::class, $path);
+        return $fileInfo->getMimeType() ?: 'application/octet-stream';
     }
 
     /**
@@ -1537,7 +1531,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
                 continue;
             }
             $iterator->next();
-            $file = $this->getFileInfoByIdentifier($entry);
+            $file = $this->getFileInfoByIdentifier($entry, ['name', 'identifier']);
             if (!empty($file) &&
                 !$this->applyFilterMethodsToDirectoryItem(
                     $filterMethods,

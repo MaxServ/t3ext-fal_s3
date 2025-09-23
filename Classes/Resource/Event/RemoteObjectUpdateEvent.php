@@ -66,7 +66,8 @@ class RemoteObjectUpdateEvent
         }
 
         $fileInfo = $event->getProcessedFile()->getStorage()->getFileInfoByIdentifier(
-            $event->getProcessedFile()->getIdentifier()
+            $event->getProcessedFile()->getIdentifier(),
+            ['mtime']
         );
 
         if ($this->remoteObjectNeedsUpdate($fileInfo)) {
