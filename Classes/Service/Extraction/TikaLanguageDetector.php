@@ -6,9 +6,6 @@ namespace MaxServ\FalS3\Service\Extraction;
 
 use MaxServ\FalS3\Driver\AmazonS3Driver;
 
-/**
- * Class TikaLanguageDetector
- */
 class TikaLanguageDetector extends \Causal\Extractor\Service\Extraction\TikaLanguageDetector
 {
     /**

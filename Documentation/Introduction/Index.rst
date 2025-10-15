@@ -1,11 +1,6 @@
-﻿.. ==================================================
-.. FOR YOUR INFORMATION
-.. --------------------------------------------------
-.. -*- coding: utf-8 -*- with BOM.
+﻿.. _introduction:
 
-.. include:: ../Includes.txt
-
-
+================
 What does it do?
 ================
 
@@ -13,6 +8,6 @@ This extension implements a FAL driver to allow TYPO3 CMS to store files in an S
 
 .. warning::
 
-	**For integration of this extension must set to Composer Mode.**
+    **For integration of this extension must set to Composer Mode.**
 
-	Using Composer the latest stable version of the AWS SDK is downloaded when installing this driver.
+    Using Composer the latest stable version of the AWS SDK is downloaded when installing this driver.

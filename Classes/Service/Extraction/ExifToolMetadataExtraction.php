@@ -6,9 +6,6 @@ namespace MaxServ\FalS3\Service\Extraction;
 
 use MaxServ\FalS3\Driver\AmazonS3Driver;
 
-/**
- * Class ExifToolMetadataExtraction
- */
 class ExifToolMetadataExtraction extends \Causal\Extractor\Service\Extraction\ExifToolMetadataExtraction
 {
     /**

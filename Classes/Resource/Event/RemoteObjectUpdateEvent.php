@@ -2,21 +2,7 @@
 
 declare(strict_types=1);
 
-// phpcs:ignore
 namespace MaxServ\FalS3\Resource\Event;
-
-/*
- * This file is part of the TYPO3 CMS project.
- *
- * It is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License, either version 2
- * of the License, or any later version.
- *
- * For the full copyright and license information, please read the
- * LICENSE.txt file that was distributed with this source code.
- *
- * The TYPO3 project - inspiring people to share!
- */
 
 use Aws\Result;
 use Aws\S3\S3Client;
@@ -32,33 +18,18 @@ use TYPO3\CMS\Core\Resource\ProcessedFileRepository;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-/**
- * Class RemoteObjectUpdateEvent
- */
 class RemoteObjectUpdateEvent
 {
-    /**
-     * PSR-14 Event listener
-     * @param AfterFileMetaDataCreatedEvent $event
-     */
     public function afterFileMetaDataCreated(AfterFileMetaDataCreatedEvent $event): void
     {
         $this->updateRemoteCacheDirectiveForFile($event->getFileUid());
     }
 
-    /**
-     * PSR-14 Event listener
-     * @param AfterFileMetaDataUpdatedEvent $event
-     */
     public function afterFileMetaDataUpdated(AfterFileMetaDataUpdatedEvent $event): void
     {
         $this->updateRemoteCacheDirectiveForFile($event->getFileUid());
     }
 
-    /**
-     * PSR-14 Event listener
-     * @param AfterFileProcessingEvent $event
-     */
     public function afterFileProcessing(AfterFileProcessingEvent $event): void
     {
         if (!$event->getProcessedFile()->exists() || $event->getProcessedFile()->usesOriginalFile()) {
@@ -74,19 +45,11 @@ class RemoteObjectUpdateEvent
         }
     }
 
-    /**
-     * @param array $fileInfo
-     *
-     * @return bool
-     */
     protected function remoteObjectNeedsUpdate(array $fileInfo): bool
     {
         return array_key_exists('mtime', $fileInfo) && (int)$fileInfo['mtime'] > (time() - 30);
     }
 
-    /**
-     * @param int $fileUid
-     */
     protected function updateRemoteCacheDirectiveForFile(int $fileUid): void
     {
         try {
@@ -116,9 +79,6 @@ class RemoteObjectUpdateEvent
         }
     }
 
-    /**
-     * @param AbstractFile $file
-     */
     protected function updateCacheControlDirectivesForRemoteObject(AbstractFile $file): void
     {
         $currentResource = null;
@@ -128,7 +88,7 @@ class RemoteObjectUpdateEvent
 
         $key = '';
 
-        if (array_key_exists('basePath', $driverConfiguration) && !empty($driverConfiguration['basePath'])) {
+        if (!empty($driverConfiguration['basePath'] ?? '')) {
             $key .= trim($driverConfiguration['basePath'], '/') . '/';
         }
 

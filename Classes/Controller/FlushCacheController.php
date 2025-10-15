@@ -10,9 +10,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException;
 use TYPO3\CMS\Core\Http\Response;
 
-/**
- * Class FlushCacheController
- */
 class FlushCacheController
 {
     /**
@@ -23,7 +20,7 @@ class FlushCacheController
      * @return ResponseInterface
      * @throws NoSuchCacheException
      */
-    public function flushCache(ServerRequestInterface $request)
+    public function flushCache(ServerRequestInterface $request): ResponseInterface
     {
         $cacheFrontend = Cache::getCacheFrontend();
         $cacheFrontend->flush();

@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <T3DataStructure>
-	<meta>
-		<langDisable>1</langDisable>
-	</meta>
-	<ROOT>
-		<type>array</type>
-		<el>
-			<configurationKey>
-				<TCEforms>
-					<label>Storage configuration</label>
-					<config>
-						<type>select</type>
-						<renderType>selectSingle</renderType>
-						<items type="array"></items>
-						<itemsProcFunc>MaxServ\FalS3\Utility\FlexFormUtility->getStorageConfigurations</itemsProcFunc>
-						<size>1</size>
-						<minitems>1</minitems>
-						<maxitems>1</maxitems>
-					</config>
-				</TCEforms>
-			</configurationKey>
-		</el>
-	</ROOT>
+    <meta>
+        <langDisable>1</langDisable>
+    </meta>
+    <ROOT>
+        <type>array</type>
+        <el>
+            <configurationKey>
+                <TCEforms>
+                    <label>Storage configuration</label>
+                    <config>
+                        <type>select</type>
+                        <renderType>selectSingle</renderType>
+                        <items type="array"></items>
+                        <itemsProcFunc>MaxServ\FalS3\Utility\FlexFormUtility->getStorageConfigurations</itemsProcFunc>
+                        <size>1</size>
+                        <minitems>1</minitems>
+                        <maxitems>1</maxitems>
+                    </config>
+                </TCEforms>
+            </configurationKey>
+        </el>
+    </ROOT>
 </T3DataStructure>
