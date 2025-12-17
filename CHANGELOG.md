@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2025-12-18
+### Changed
+- Use the `FileInfo` class to determine mime types instead of the (in a core security patch) removed `fileExtensionToMimeType` array
+- In the filelist, prevent an unnecessary redis call per file in a folder. This results in a significant performance improvement when listing folders with >1000 files.
+
 ## [2.2.0] - 2024-10-25
 ### Added
 - Support for php 8.3
