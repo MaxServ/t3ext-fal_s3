@@ -18,6 +18,7 @@ All we needed to care about was the concept of remote file storage and working w
 
 * [Introduction](/Documentation/Introduction/Index.rst)
 * [Administrator Manual](/Documentation/AdministratorManual/Index.rst)
+* [Example Configurations](/Documentation/AdministratorManual/examples.rst)
 
 ## Versions and support
 
