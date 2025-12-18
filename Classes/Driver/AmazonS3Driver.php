@@ -1531,15 +1531,17 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
                 continue;
             }
             $iterator->next();
-            $file = $this->getFileInfoByIdentifier($entry, ['name', 'identifier']);
-            if (!empty($file) &&
-                !$this->applyFilterMethodsToDirectoryItem(
-                    $filterMethods,
-                    $file['name'],
-                    $file['identifier'],
-                    $this->getParentFolderIdentifierOfIdentifier($file['identifier'])
-                )
-            ) {
+
+            $path = $this->getStreamWrapperPath($entry);
+            $fileName = $this->getSpecificFileInformation($entry, $path, 'name');
+            $identifier = $this->getSpecificFileInformation($entry, $path, 'identifier');
+
+            if (!$this->applyFilterMethodsToDirectoryItem(
+                $filterMethods,
+                $fileName,
+                $identifier,
+                $this->getParentFolderIdentifierOfIdentifier($identifier)
+            )) {
                 unset($directoryEntries[$entry]);
             }
         }
