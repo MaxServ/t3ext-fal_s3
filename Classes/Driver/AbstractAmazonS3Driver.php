@@ -22,6 +22,7 @@ use TYPO3\CMS\Core\Resource\FileInterface;
 use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
 use TYPO3\CMS\Core\Resource\StorageRepository;
+use TYPO3\CMS\Core\Type\File\FileInfo;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
@@ -1009,15 +1010,8 @@ abstract class AbstractAmazonS3Driver extends AbstractHierarchicalFilesystemDriv
      */
     public function getFileMimeType(string $path): string
     {
-        $fileExtensionToMimeTypeMapping = $GLOBALS['TYPO3_CONF_VARS']['SYS']['FileInfo']['fileExtensionToMimeType'];
-        $lowercaseFileExtension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-        $mimeType = MimeType::fromExtension($lowercaseFileExtension);
-
-        if ($mimeType === null && !empty($fileExtensionToMimeTypeMapping[$lowercaseFileExtension])) {
-            $mimeType = $fileExtensionToMimeTypeMapping[$lowercaseFileExtension];
-        }
-
-        return $mimeType ?? 'application/octet-stream';
+        $fileInfo = GeneralUtility::makeInstance(FileInfo::class, $path);
+        return $fileInfo->getMimeType() ?: 'application/octet-stream';
     }
 
     /**
@@ -1406,15 +1400,17 @@ abstract class AbstractAmazonS3Driver extends AbstractHierarchicalFilesystemDriv
                 continue;
             }
             $iterator->next();
-            $file = $this->getFileInfoByIdentifier($entry);
-            if (!empty($file) &&
-                !$this->applyFilterMethodsToDirectoryItem(
-                    $filterMethods,
-                    $file['name'],
-                    $file['identifier'],
-                    $this->getParentFolderIdentifierOfIdentifier($file['identifier'])
-                )
-            ) {
+
+            $path = $this->getStreamWrapperPath($entry);
+            $fileName = $this->getSpecificFileInformation($entry, $path, 'name');
+            $identifier = $this->getSpecificFileInformation($entry, $path, 'identifier');
+
+            if (!$this->applyFilterMethodsToDirectoryItem(
+                $filterMethods,
+                $fileName,
+                $identifier,
+                $this->getParentFolderIdentifierOfIdentifier($identifier)
+            )) {
                 unset($directoryEntries[$entry]);
             }
         }

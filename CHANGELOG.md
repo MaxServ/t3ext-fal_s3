@@ -17,6 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for TYPO3 11
 - Support for PHP 7 and 8.0
 
+## [2.3.1] - 2025-12-19
+### Changed
+- Re-order if conditions in `RemoteObjectUpdateEvent` listener to prevent unnecessary redis calls when an original file is used for processed files
+
+## [2.3.0] - 2025-12-18
+### Changed
+- Use the `FileInfo` class to determine mime types instead of the (in a core security patch) removed `fileExtensionToMimeType` array
+- In the filelist, prevent an unnecessary redis call per file in a folder. This results in a significant performance improvement when listing folders with >1000 files.
+
 ## [2.2.0] - 2024-10-25
 ### Added
 - Support for php 8.3

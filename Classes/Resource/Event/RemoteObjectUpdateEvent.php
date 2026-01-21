@@ -32,12 +32,13 @@ class RemoteObjectUpdateEvent
 
     public function afterFileProcessing(AfterFileProcessingEvent $event): void
     {
-        if (!$event->getProcessedFile()->exists() || $event->getProcessedFile()->usesOriginalFile()) {
+        if ($event->getProcessedFile()->usesOriginalFile() || !$event->getProcessedFile()->exists()) {
             return;
         }
 
         $fileInfo = $event->getProcessedFile()->getStorage()->getFileInfoByIdentifier(
-            $event->getProcessedFile()->getIdentifier()
+            $event->getProcessedFile()->getIdentifier(),
+            ['mtime']
         );
 
         if ($this->remoteObjectNeedsUpdate($fileInfo)) {

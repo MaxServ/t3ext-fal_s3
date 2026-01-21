@@ -9,8 +9,9 @@ Add the following snippet to your :code:`config/system/settings.php` and adjust 
 .. code-block:: php
 
     $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations']['contentStorage'] = [
-        'basePath' => '/{$FOLDER_PREFIX}/'
+        'basePath' => '/{$FOLDER_PREFIX}/',
         'bucket' => 's3://{$BUCKET_NAME}',
+        'endpoint' => '{$S3_ENDPOINT}',
         'excludedFolders' => ['Secret/Stash', 'SomethingElse'],
         'key' => '{$IAM_KEY}',
         'publicBaseUrl' => 'https://{$CF_DISTRIBUTION_ID}.cloudfront.net',
@@ -27,6 +28,9 @@ stored in the `File Storage` DB record so this record doesn't need to be changed
 
 `bucket`
     The name of your S3 bucket.
+
+`endpoint`
+    The full URI of the S3 compatible storage service. This is only required if your provider is not AWS S3.
 
 `excludedFolders`
     An array of folders that are present on S3, but should not be made available to TYPO3.
