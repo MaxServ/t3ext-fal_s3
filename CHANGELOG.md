@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Support for TYPO3 13
 - DDEV Setup for development
+- Automatic CSP registration for the configured buckets
 
 ### Changed
 - Updated Documentation to the new documentation rendering standards

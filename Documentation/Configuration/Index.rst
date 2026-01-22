@@ -49,3 +49,42 @@ stored in the `File Storage` DB record so this record doesn't need to be changed
 
 `title`
     The readable title you see as selectable option when editing a File Storage.
+
+Examples
+--------
+
+AWS S3
+~~~~~~
+
+.. code-block:: php
+
+	$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations']['contentStorage'] = [
+		'basePath' => '/',
+		'bucket' => 's3://my-bucket',
+		'key' => '{$IAM_KEY}',
+		'publicBaseUrl' => 'https://abc123.cloudfront.net',
+		'region' => 'eu-west-1',
+		'secret' => '{$IAM_SECRET}',
+		'title' => 'AWS S3 Storage',
+	];
+
+Hetzner Object Storage
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: php
+
+	$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations']['storage1'] = [
+		'basePath' => '/',
+		'bucket' => 's3://bucket1',
+		'endpoint' => 'https://nbg1.your-objectstorage.com',
+		'key' => '{$IAM_KEY}',
+		'publicBaseUrl' => 'https://bucket1.nbg1.your-objectstorage.com',
+		'region' => 'eu-central',
+		'secret' => '{$IAM_SECRET}',
+		'title' => 'Hetzner Storage',
+	];
+
+.. note::
+
+   The bucket needs to be configured as public if media should be accessible directly from the frontend.
+   The source of an image would look like: `https://bucket1.nbg1.your-objectstorage.com/example.png`

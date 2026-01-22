@@ -17,6 +17,7 @@
 !/Configuration/Backend/*.php
 !/Configuration/FlexForm
 !/Configuration/FlexForm/*.xml
+!/Configuration/ContentSecurityPolicies.php
 !/Configuration/Icons.php
 !/Configuration/RequestMiddlewares.php
 !/Configuration/Services.yaml
