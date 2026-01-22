@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Updated Documentation to the new documentation rendering standards
+- Updated `aws/aws-sdk-php` dependency requirement to 3.369.17 to make sure a non-vulnerable version of the sdk is being used
 
 ### Removed
 - Support for TYPO3 11
