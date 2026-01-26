@@ -1,0 +1,16 @@
+{
+    "name": "maxserv/sitepackage",
+    "type": "typo3-cms-extension",
+    "version": "1.0.0",
+    "description": "Sitepackage for FAL S3 TYPO3 extension",
+    "extra": {
+        "typo3/cms": {
+            "extension-key": "sitepackage"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "MaxServ\\Sitepackage\\": "Classes/"
+        }
+    }
+}

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+FULLURL="https://docs.${DDEV_SITENAME}.ddev.site"
+
+echo "Opening \"https://docs.${DDEV_SITENAME}.ddev.site\"..."
+
+case $OSTYPE in
+  linux-gnu)
+    xdg-open ${FULLURL}
+    ;;
+  "darwin"*)
+    open ${FULLURL}
+    ;;
+  "win*"* | "msys"*)
+    start ${FULLURL}
+    ;;
+esac

@@ -6,9 +6,6 @@ namespace MaxServ\FalS3\Service\Extraction;
 
 use MaxServ\FalS3\Driver\AmazonS3Driver;
 
-/**
- * Class PhpMetadataExtraction
- */
 class PhpMetadataExtraction extends \Causal\Extractor\Service\Extraction\PhpMetadataExtraction
 {
     /**

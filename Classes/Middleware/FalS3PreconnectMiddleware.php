@@ -13,15 +13,9 @@ use TYPO3\CMS\Core\Resource\StorageRepository;
 
 class FalS3PreconnectMiddleware implements MiddlewareInterface
 {
-    /**
-     * @var StorageRepository
-     */
-    protected $storageRepository;
-
-    public function __construct(StorageRepository $storageRepository)
-    {
-        $this->storageRepository = $storageRepository;
-    }
+    public function __construct(
+        protected StorageRepository $storageRepository
+    ) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {

@@ -1,0 +1,74 @@
+#ddev-generated
+services:
+  minio:
+    container_name: ddev-${DDEV_SITENAME}-minio
+    image: ${MINIO_DOCKER_IMAGE:-minio/minio:latest}
+    environment:
+      MINIO_VOLUMES: "/data"
+      MC_CONFIG_DIR: "/root/.mc"
+      MINIO_UID: $DDEV_UID
+      MINIO_GID: $DDEV_GID
+      MINIO_ROOT_USER: ddevminio
+      MINIO_ROOT_PASSWORD: ddevminio
+      MINIO_SERVER_URL: ${DDEV_PRIMARY_URL}:10101
+      MINIO_BROWSER_REDIRECT_URL: ${DDEV_PRIMARY_URL}:9090
+      VIRTUAL_HOST: $DDEV_HOSTNAME
+      HTTP_EXPOSE: "9089:9090,10100:10101"
+      HTTPS_EXPOSE: "9090:9090,10101:10101"
+    command: server --console-address :9090 --address :10101
+    volumes:
+      - "minio:/data"
+      - ".:/mnt/ddev_config"
+      - ddev-global-cache:/mnt/ddev-global-cache
+      - type: volume
+        source: ddev-global-cache
+        target: /root/.minio/certs/CAs
+        volume:
+          subpath: mkcert
+    configs:
+      - source: mc-config.json
+        target: /root/.mc/config.json
+        mode: "0444"
+    expose:
+      - "9090"
+      - "10101"
+    labels:
+      com.ddev.site-name: ${DDEV_SITENAME}
+      com.ddev.approot: ${DDEV_APPROOT}
+    external_links:
+      - ddev-router:${DDEV_SITENAME}.${DDEV_TLD}
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: "1024M"
+        reservations:
+          cpus: "1.5"
+          memory: "512M"
+    restart: "no"
+    healthcheck:
+      interval: 120s
+      timeout: 2s
+      retries: 1
+
+configs:
+  mc-config.json:
+    content: |
+      {
+        "version": "10",
+        "aliases": {
+          "minio": {
+            "url": "http://localhost:10101",
+            "accessKey": "ddevminio",
+            "secretKey": "ddevminio",
+            "api": "s3v4",
+            "path": "auto"
+          }
+        }
+      }
+
+volumes:
+  minio:
+    name: ddev-${DDEV_SITENAME}-minio
+    labels:
+      com.ddev.site-name: ${DDEV_SITENAME}

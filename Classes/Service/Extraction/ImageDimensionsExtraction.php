@@ -12,9 +12,6 @@ use TYPO3\CMS\Core\Resource\Index\ExtractorInterface;
 use TYPO3\CMS\Core\Type\File\ImageInfo;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-/**
- * Class ImageDimensionsExtraction
- */
 class ImageDimensionsExtraction implements ExtractorInterface
 {
     /**
@@ -72,10 +69,6 @@ class ImageDimensionsExtraction implements ExtractorInterface
         return $previousExtractedData;
     }
 
-    /**
-     * @param FileInterface $file
-     * @return array
-     */
     public function getImageDimensions(FileInterface $file): array
     {
         $fileNameAndPath = $file->getForLocalProcessing(false);
