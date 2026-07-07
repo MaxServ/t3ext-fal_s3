@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-07-07
+### Added
+- Recursive folder listings are composed from the direct children of the listed folder, where each subfolder subtree is resolved with a single paginated `ListObjectsV2` request and cached independently. A write in the storage only invalidates the subtrees of its ancestor folders, sibling subtrees stay cached, and excluded folders (including the processing folder) are skipped without fetching their keys from S3. The scan response also primes the per-folder listing caches and the folder stat cache, and finds folders that have no marker object
+- Recursive folder listings are memoized per request, repeated listings of the same folder (e.g. the file and folder pass of a backend tree filter) no longer fetch and unserialize the cached listing twice
+- Contents of online media files (`.youtube`, `.vimeo`, ...) are cached, preventing a remote call per file on every render of a file list or media element
+
+### Changed
+- **Breaking:** cache entry identifiers and tags use descriptive prefixes (see the constants on `MaxServ\FalS3\Driver\Cache`) instead of abbreviations. Flush the `tx_fal_s3` cache once after upgrading, entries written by older versions are no longer read or invalidated
+- **Breaking:** `CachedDirectoryIterator` is replaced by `CachedDirectoryListing`, which returns the entries as a plain array instead of implementing the iterator interfaces. The cached listing is stored unfiltered, filtering is applied by the caller
+- **Breaking:** `resolveFolderEntries()` gained an `$excludeProcessingFolder` parameter and no longer temporarily mutates the `excludedFolders` configuration
+- **Breaking:** `Cache::get()` stores entries fetched from the shared cache in the runtime LRU cache and returns `null` instead of `false` on a miss in line with `LruArrayCache`
+- Recursive and non-recursive file/folder counts are cached independently instead of sharing one cache entry
+
+### Fixed
+- Folder name filter callbacks passed to `getFoldersInFolder()` are applied, they were silently ignored
+- Empty folder listings are cached, an empty array was treated as a cache miss and triggered a rescan on every call
+
 ## [3.0.0] - 2026-01-26
 ### Added
 - Support for TYPO3 13

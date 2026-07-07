@@ -6,7 +6,6 @@ namespace MaxServ\FalS3\Driver;
 
 use Aws\S3\S3Client;
 use Aws\S3\StreamWrapper;
-use GuzzleHttp\Psr7\MimeType;
 use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException;
 use TYPO3\CMS\Core\Http\Response;
@@ -20,6 +19,7 @@ use TYPO3\CMS\Core\Resource\Exception\InvalidFileNameException;
 use TYPO3\CMS\Core\Resource\Exception\InvalidPathException;
 use TYPO3\CMS\Core\Resource\FileInterface;
 use TYPO3\CMS\Core\Resource\Folder;
+use TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\OnlineMediaHelperRegistry;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
 use TYPO3\CMS\Core\Resource\StorageRepository;
 use TYPO3\CMS\Core\Type\File\FileInfo;
@@ -35,6 +35,7 @@ abstract class AbstractAmazonS3Driver extends AbstractHierarchicalFilesystemDriv
     protected array $temporaryFiles = [];
     protected array $fileExistsCache = [];
     protected array $folderExistsCache = [];
+    protected array $recursiveFolderEntriesCache = [];
 
     /**
      * Remove all temporary created files when the object is destroyed.
@@ -774,8 +775,51 @@ abstract class AbstractAmazonS3Driver extends AbstractHierarchicalFilesystemDriv
     public function getFileContents($fileIdentifier): string
     {
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
+        $path = $this->getStreamWrapperPath($fileIdentifier);
 
-        return file_get_contents($this->getStreamWrapperPath($fileIdentifier)) ?: '';
+        /**
+         * Contents of online media files are cached because TYPO3 core reads
+         * them (.youtube, .vimeo, ...) through getFileContents() on every render
+         * of the file list or a media element: the only cache around it is an
+         * instance property in AbstractOnlineMediaHelper::getOnlineMediaId()
+         * and OnlineMediaHelperRegistry creates a fresh helper instance per call,
+         * so nothing is reused, not even within a single request (verified up to
+         * the TYPO3 v14 main branch, June 2026). On local storage that read is
+         * free, on S3 it is a remote call per file per render.
+         *
+         * This cache can be removed once all supported TYPO3 versions stop
+         * calling getFileContents() per render, i.e. when core persists the
+         * online media id (e.g. in sys_file_metadata) or caches it across
+         * requests. The 2048 byte limit matches the limit core applies to media
+         * identifiers in AbstractOnlineMediaHelper::getOnlineMediaId().
+         */
+        $isOnlineMedia = $this->isOnlineMediaFile($fileIdentifier);
+
+        if ($isOnlineMedia) {
+            $cacheEntryIdentifier = Cache::buildEntryIdentifier($path, Cache::PREFIX_FILE_CONTENTS);
+            $contents = Cache::getCacheFrontend()->get($cacheEntryIdentifier);
+            if ($contents !== false) {
+                return (string)$contents;
+            }
+        }
+
+        $contents = file_get_contents($path);
+
+        if ($isOnlineMedia && $contents !== false && strlen($contents) <= 2048) {
+            // tagged with the parent folder so every write path that calls
+            // flushCacheEntriesForFolder() invalidates it as well
+            $parentFolderPath = $this->getStreamWrapperPath(
+                $this->getParentFolderIdentifierOfIdentifier($fileIdentifier)
+            );
+            Cache::getCacheFrontend()->set(
+                $cacheEntryIdentifier,
+                $contents,
+                [Cache::buildEntryIdentifier($parentFolderPath, Cache::TAG_FOLDER_CONTENTS)],
+                0
+            );
+        }
+
+        return $contents === false ? '' : $contents;
     }
 
     /**
@@ -789,14 +833,30 @@ abstract class AbstractAmazonS3Driver extends AbstractHierarchicalFilesystemDriv
     public function setFileContents($fileIdentifier, $contents): int
     {
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
+        $path = $this->getStreamWrapperPath($fileIdentifier);
 
-        $file = file_put_contents($this->getStreamWrapperPath($fileIdentifier), $contents);
+        $file = file_put_contents($path, $contents);
 
         if ($file === false) {
             throw new \RuntimeException(sprintf('File "%s" was not created', $fileIdentifier));
         }
 
+        // keep the online media contents cache in sync, see getFileContents()
+        Cache::getCacheFrontend()->remove(Cache::buildEntryIdentifier($path, Cache::PREFIX_FILE_CONTENTS));
+
         return $file;
+    }
+
+    /**
+     * Checks if a file extension has a registered online media helper, only
+     * those files are eligible for the contents cache in getFileContents().
+     */
+    protected function isOnlineMediaFile(string $fileIdentifier): bool
+    {
+        $fileExtension = strtolower(pathinfo($fileIdentifier, PATHINFO_EXTENSION));
+
+        return $fileExtension !== ''
+            && GeneralUtility::makeInstance(OnlineMediaHelperRegistry::class)->hasOnlineMediaHelper($fileExtension);
     }
 
     /**
@@ -1070,7 +1130,8 @@ abstract class AbstractAmazonS3Driver extends AbstractHierarchicalFilesystemDriv
             $recursive,
             true,
             false,
-            $filenameFilterCallbacks
+            $filenameFilterCallbacks,
+            true
         );
 
         if (!$recursive) {
@@ -1128,24 +1189,24 @@ abstract class AbstractAmazonS3Driver extends AbstractHierarchicalFilesystemDriv
             return [];
         }
 
-        $processingFolder = $this->getProcessingFolder();
-        $excludedFolders = $this->configuration['excludedFolders'];
-        $this->configuration['excludedFolders'][] = $processingFolder;
-
-        $folderEntries = $this->resolveFolderEntries($folderIdentifier, $recursive, false, true);
+        $folderEntries = $this->resolveFolderEntries(
+            $folderIdentifier,
+            $recursive,
+            false,
+            true,
+            $folderNameFilterCallbacks,
+            true
+        );
 
         if (!$recursive) {
             $folderEntries = $this->sortFolderEntries($folderEntries);
         }
 
-        $folderIdentifiers = array_slice(
+        return array_slice(
             $folderEntries,
             $start,
             ($numberOfItems > 0 ? $numberOfItems : null)
         );
-
-        $this->configuration['excludedFolders'] = $excludedFolders;
-        return $folderIdentifiers;
     }
 
     /**
@@ -1177,13 +1238,16 @@ abstract class AbstractAmazonS3Driver extends AbstractHierarchicalFilesystemDriv
 
         $cacheEntryIdentifier = Cache::buildEntryIdentifier(
             $path,
-            'count_files'
+            $recursive ? Cache::PREFIX_RECURSIVE_FILE_COUNT : Cache::PREFIX_FILE_COUNT
         );
 
         $count = Cache::getCacheFrontend()->get($cacheEntryIdentifier);
         if ($count === false) {
             $count = count($this->getFilesInFolder($folderIdentifier, 0, 0, $recursive, $filenameFilterCallbacks));
-            $cacheTags = [Cache::buildEntryIdentifier($path, 'd')];
+            $cacheTags = [Cache::buildEntryIdentifier(
+                $path,
+                $recursive ? Cache::TAG_FOLDER_SUBTREE : Cache::TAG_FOLDER_CONTENTS
+            )];
             Cache::getCacheFrontend()->set($cacheEntryIdentifier, $count, $cacheTags, 0);
         }
 
@@ -1210,13 +1274,16 @@ abstract class AbstractAmazonS3Driver extends AbstractHierarchicalFilesystemDriv
 
         $cacheEntryIdentifier = Cache::buildEntryIdentifier(
             $path,
-            'count_folders'
+            $recursive ? Cache::PREFIX_RECURSIVE_FOLDER_COUNT : Cache::PREFIX_FOLDER_COUNT
         );
 
         $count = Cache::getCacheFrontend()->get($cacheEntryIdentifier);
         if ($count === false) {
             $count = count($this->getFoldersInFolder($folderIdentifier, 0, 0, $recursive, $folderNameFilterCallbacks));
-            $cacheTags = [Cache::buildEntryIdentifier($path, 'd')];
+            $cacheTags = [Cache::buildEntryIdentifier(
+                $path,
+                $recursive ? Cache::TAG_FOLDER_SUBTREE : Cache::TAG_FOLDER_CONTENTS
+            )];
             Cache::getCacheFrontend()->set($cacheEntryIdentifier, $count, $cacheTags, 0);
         }
 
@@ -1330,6 +1397,7 @@ abstract class AbstractAmazonS3Driver extends AbstractHierarchicalFilesystemDriv
      * @param bool $includeFiles
      * @param bool $includeDirectories
      * @param array $filterMethods
+     * @param bool $excludeProcessingFolder
      *
      * @return array
      * @throws InvalidPathException
@@ -1340,83 +1408,308 @@ abstract class AbstractAmazonS3Driver extends AbstractHierarchicalFilesystemDriv
         bool $recursive = false,
         bool $includeFiles = true,
         bool $includeDirectories = true,
-        array $filterMethods = []
+        array $filterMethods = [],
+        bool $excludeProcessingFolder = false
     ): array {
         $excludedFolders = $this->configuration['excludedFolders'] ?? [];
         if (in_array($folderIdentifier, $excludedFolders, true)) {
             return [];
         }
-        $cacheFrontend = Cache::getCacheFrontend();
-        $directoryEntries = [];
+        if ($excludeProcessingFolder) {
+            $excludedFolders[] = $this->getProcessingFolder();
+        }
         $folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
+
+        $entries = $recursive
+            ? $this->getRecursiveFolderEntries($folderIdentifier)
+            : $this->getDirectFolderEntries($folderIdentifier);
+
+        $directoryEntries = [];
+        foreach ($entries as $entry) {
+            $isDirectory = str_ends_with($entry, '/');
+            if ($isDirectory && !$includeDirectories) {
+                continue;
+            }
+            if (!$isDirectory && !$includeFiles) {
+                continue;
+            }
+            if ($this->isWithinExcludedFolder($entry, $folderIdentifier, $excludedFolders)) {
+                continue;
+            }
+            if (!$this->applyFilterMethodsToDirectoryItem(
+                $filterMethods,
+                basename($entry),
+                $entry,
+                $this->getParentFolderIdentifierOfIdentifier($entry)
+            )) {
+                continue;
+            }
+            $directoryEntries[$entry] = $entry;
+        }
+
+        return array_values($directoryEntries);
+    }
+
+    /**
+     * Lists the direct children of a folder, using one cache entry per folder.
+     *
+     * @return string[] file and folder identifiers, folders end with a slash
+     * @throws NoSuchCacheException
+     */
+    protected function getDirectFolderEntries(string $folderIdentifier): array
+    {
         $path = $this->getStreamWrapperPath($folderIdentifier);
 
         $iteratorMode = \FilesystemIterator::UNIX_PATHS |
             \FilesystemIterator::SKIP_DOTS |
             \FilesystemIterator::CURRENT_AS_FILEINFO;
 
-        $iterator = new CachedDirectoryIterator(
-            $path,
-            $iteratorMode,
-            $cacheFrontend,
+        $listing = new CachedDirectoryListing(
+            Cache::getCacheFrontend(),
             function (\SplFileInfo $fileInfo) {
                 $entryIdentifier = $this->stripStreamWrapperPath($fileInfo->getPathname());
                 if ($fileInfo->isDir()) {
-                    $entryIdentifier = $this->canonicalizeAndCheckFolderIdentifier($entryIdentifier);
-                } else {
-                    $entryIdentifier = $this->canonicalizeAndCheckFileIdentifier($entryIdentifier);
+                    return $this->canonicalizeAndCheckFolderIdentifier($entryIdentifier);
                 }
-                return $entryIdentifier;
-            },
-            function (\SplFileInfo $fileInfo) use ($excludedFolders) {
-                return ($fileInfo->getFilename() === '')
-                    || ($fileInfo->isDir() && in_array($fileInfo->getFilename(), $excludedFolders, true));
+                return $this->canonicalizeAndCheckFileIdentifier($entryIdentifier);
             }
         );
 
-        if ($recursive) {
-            $processingFolder = $this->getProcessingFolder();
-            $excludedFolders = $this->configuration['excludedFolders'];
-            $this->configuration['excludedFolders'][] = $processingFolder;
+        return $listing->getEntries($path, $iteratorMode);
+    }
 
-            $iterator = new \RecursiveIteratorIterator(
-                $iterator,
-                \RecursiveIteratorIterator::SELF_FIRST
+    /**
+     * Lists a complete folder subtree: files directly in the folder as-is,
+     * each subfolder via its own cached (or freshly scanned) subtree. Caching
+     * per subfolder means a write only invalidates the subtrees of its
+     * ancestor folders while sibling subtrees stay warm; the composed result
+     * itself is therefore only memoized per request. Excluded and processing
+     * folders are skipped without fetching their keys from S3.
+     *
+     * @return string[] file and folder identifiers, folders end with a slash
+     * @throws NoSuchCacheException
+     */
+    protected function getRecursiveFolderEntries(string $folderIdentifier): array
+    {
+        if (array_key_exists($folderIdentifier, $this->recursiveFolderEntriesCache)) {
+            return $this->recursiveFolderEntriesCache[$folderIdentifier];
+        }
+
+        $cacheFrontend = Cache::getCacheFrontend();
+        $path = $this->getStreamWrapperPath($folderIdentifier);
+
+        $entries = $cacheFrontend->get(Cache::buildEntryIdentifier($path, Cache::PREFIX_RECURSIVE_LISTING));
+        if ($entries === false) {
+            $excludedFolderNames = $this->configuration['excludedFolders'] ?? [];
+            $excludedFolderNames[] = $this->getProcessingFolder();
+            $excludedFolderNames = array_unique($excludedFolderNames);
+
+            $entries = [];
+
+            foreach ($this->getDirectFolderEntries($folderIdentifier) as $childIdentifier) {
+                if (!str_ends_with($childIdentifier, '/')) {
+                    $entries[] = $childIdentifier;
+                    continue;
+                }
+
+                if (in_array(basename($childIdentifier), $excludedFolderNames, true)) {
+                    continue;
+                }
+
+                $entries[] = $childIdentifier;
+                $childPath = $this->getStreamWrapperPath($childIdentifier);
+                $childEntries = $cacheFrontend->get(
+                    Cache::buildEntryIdentifier($childPath, Cache::PREFIX_RECURSIVE_LISTING)
+                );
+
+                if ($childEntries === false) {
+                    $childEntries = $this->scanFolderSubtree($childIdentifier);
+                }
+
+                foreach ($childEntries as $childEntry) {
+                    $entries[] = $childEntry;
+                }
+            }
+        }
+
+        $this->recursiveFolderEntriesCache[$folderIdentifier] = $entries;
+
+        return $entries;
+    }
+
+    /**
+     * Scans a complete folder subtree with one paginated ListObjectsV2 call.
+     * Folders are derived from the object keys, marker objects are optional.
+     * The result is cached per subtree, and the response also fills the
+     * per-folder listing and folder stat caches. Excluded and processing
+     * folders are skipped.
+     *
+     * @return string[] file and folder identifiers, folders end with a slash
+     * @throws NoSuchCacheException
+     */
+    protected function scanFolderSubtree(string $folderIdentifier): array
+    {
+        $cacheFrontend = Cache::getCacheFrontend();
+        $path = $this->getStreamWrapperPath($folderIdentifier);
+
+        $prefix = ltrim($this->getBasePath() . $folderIdentifier, '/');
+        $entries = [];
+        $childrenPerFolder = [$folderIdentifier => []];
+        $statCache = new Cache();
+
+        // contents of the processing folder and configured excluded folders are
+        // skipped during the scan, both sets are static per storage so the cache
+        // entry stays deterministic
+        $excludedFolderNames = $this->configuration['excludedFolders'] ?? [];
+        $excludedFolderNames[] = $this->getProcessingFolder();
+        $excludedPathParts = [];
+        foreach (array_unique($excludedFolderNames) as $excludedFolderName) {
+            $excludedPathParts[] = '/' . $excludedFolderName . '/';
+        }
+
+        $paginator = $this->s3Client->getPaginator('ListObjectsV2', [
+            'Bucket' => $this->configuration['bucket'],
+            'Prefix' => $prefix,
+        ]);
+
+        foreach ($paginator as $result) {
+            foreach (($result['Contents'] ?? []) as $object) {
+                $relativeKey = substr((string)$object['Key'], strlen($prefix));
+                if ($relativeKey === '') {
+                    // the marker object of the listed folder itself
+                    continue;
+                }
+
+                $relativePath = '/' . $relativeKey;
+                foreach ($excludedPathParts as $excludedPathPart) {
+                    if (str_contains($relativePath, $excludedPathPart)) {
+                        continue 2;
+                    }
+                }
+
+                // identifiers are built by concatenation, canonicalization is
+                // expensive and only needed for anomalous object keys
+                $requiresCanonicalization = str_contains($relativeKey, '//') || str_contains($relativeKey, './');
+
+                $isFolderMarker = str_ends_with($relativeKey, '/');
+                $segments = explode('/', trim($relativeKey, '/'));
+                $fileName = $isFolderMarker ? null : array_pop($segments);
+
+                $parentIdentifier = $folderIdentifier;
+                foreach ($segments as $segment) {
+                    $currentIdentifier = $parentIdentifier . $segment . '/';
+                    if ($requiresCanonicalization) {
+                        $currentIdentifier = $this->canonicalizeAndCheckFolderIdentifier($currentIdentifier);
+                    }
+                    if (!isset($childrenPerFolder[$currentIdentifier])) {
+                        $childrenPerFolder[$currentIdentifier] = [];
+                        $childrenPerFolder[$parentIdentifier][] = $currentIdentifier;
+                        $entries[$currentIdentifier] = $currentIdentifier;
+                        $statCache->set($this->getStreamWrapperPath($currentIdentifier), $this->buildFolderStat());
+                    }
+                    $parentIdentifier = $currentIdentifier;
+                }
+
+                if ($fileName !== null && $fileName !== '') {
+                    $fileIdentifier = $parentIdentifier . $fileName;
+                    if ($requiresCanonicalization) {
+                        $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
+                    }
+                    $entries[$fileIdentifier] = $fileIdentifier;
+                    $childrenPerFolder[$parentIdentifier][] = $fileIdentifier;
+                }
+            }
+        }
+
+        $entries = array_values($entries);
+
+        foreach ($childrenPerFolder as $currentFolderIdentifier => $children) {
+            $folderPath = $this->getStreamWrapperPath($currentFolderIdentifier);
+            $cacheFrontend->set(
+                Cache::buildEntryIdentifier($folderPath, Cache::PREFIX_LISTING),
+                $children,
+                [Cache::buildEntryIdentifier($folderPath, Cache::TAG_FOLDER_CONTENTS)],
+                0
             );
         }
 
-        while ($iterator->valid()) {
-            $entry = $iterator->current();
-            $directoryEntries[$entry] = $entry;
-            $isDirectory = str_ends_with($entry, '/');
-            if ($isDirectory && !$includeDirectories) {
-                unset($directoryEntries[$entry]);
-                $iterator->next();
-                continue;
-            }
-            if (!$isDirectory && !$includeFiles) {
-                unset($directoryEntries[$entry]);
-                $iterator->next();
-                continue;
-            }
-            $iterator->next();
+        $cacheFrontend->set(
+            Cache::buildEntryIdentifier($path, Cache::PREFIX_RECURSIVE_LISTING),
+            $entries,
+            [Cache::buildEntryIdentifier($path, Cache::TAG_FOLDER_SUBTREE)],
+            0
+        );
 
-            $path = $this->getStreamWrapperPath($entry);
-            $fileName = $this->getSpecificFileInformation($entry, $path, 'name');
-            $identifier = $this->getSpecificFileInformation($entry, $path, 'identifier');
+        return $entries;
+    }
 
-            if (!$this->applyFilterMethodsToDirectoryItem(
-                $filterMethods,
-                $fileName,
-                $identifier,
-                $this->getParentFolderIdentifierOfIdentifier($identifier)
-            )) {
-                unset($directoryEntries[$entry]);
+    /**
+     * Checks if an entry is in or below a folder excluded by name, only
+     * looking at path segments below the folder being listed.
+     */
+    protected function isWithinExcludedFolder(
+        string $entryIdentifier,
+        string $rootFolderIdentifier,
+        array $excludedFolders
+    ): bool {
+        if ($excludedFolders === []) {
+            return false;
+        }
+
+        $relativeIdentifier = substr($entryIdentifier, strlen($rootFolderIdentifier));
+        $segments = explode('/', rtrim($relativeIdentifier, '/'));
+        if (!str_ends_with($entryIdentifier, '/')) {
+            // the file name itself is not a folder segment
+            array_pop($segments);
+        }
+
+        foreach ($segments as $segment) {
+            if (in_array($segment, $excludedFolders, true)) {
+                return true;
             }
         }
 
-        $this->configuration['excludedFolders'] = $excludedFolders;
-        return array_values($directoryEntries);
+        return false;
+    }
+
+    /**
+     * Stat array for a folder in the format the AWS StreamWrapper caches
+     * and expects on url_stat lookups.
+     *
+     * @see \Aws\S3\StreamWrapper::formatUrlStat()
+     */
+    protected function buildFolderStat(): array
+    {
+        $stat = $this->getStatTemplate();
+        $stat['mode'] = $stat[2] = 0040777;
+
+        return $stat;
+    }
+
+    /**
+     * @see \Aws\S3\StreamWrapper::getStatTemplate()
+     *
+     * Copied because the SDK method is private; S3 has no metadata for
+     * folders (they are only inferred from object keys), so the all-zeros
+     * template matching PHP's stat() format is the only possible content.
+     */
+    protected function getStatTemplate(): array
+    {
+        return [
+            0 => 0, 'dev' => 0,
+            1 => 0, 'ino' => 0,
+            2 => 0, 'mode' => 0,
+            3 => 0, 'nlink' => 0,
+            4 => 0, 'uid' => 0,
+            5 => 0, 'gid' => 0,
+            6 => -1, 'rdev' => -1,
+            7 => 0, 'size' => 0,
+            8 => 0, 'atime' => 0,
+            9 => 0, 'mtime' => 0,
+            10 => 0, 'ctime' => 0,
+            11 => -1, 'blksize' => -1,
+            12 => -1, 'blocks' => -1,
+        ];
     }
 
     /**
@@ -1554,10 +1847,32 @@ abstract class AbstractAmazonS3Driver extends AbstractHierarchicalFilesystemDriv
      */
     protected function flushCacheEntriesForFolder(string $folderIdentifier): void
     {
+        $this->recursiveFolderEntriesCache = [];
+
         $folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
         $path = $this->getStreamWrapperPath($folderIdentifier);
 
-        // see resolveFolderEntries(), cache entries are tagged with the path of the parent folder
-        Cache::getCacheFrontend()->flushByTag(Cache::buildEntryIdentifier($path, 'd'));
+        // direct listings and counts are tagged with the path of the folder itself,
+        // recursive listings rooted at this folder or at any ancestor contain this
+        // folder's entries as well and carry a subtree tag per subtree root
+        $tags = [
+            Cache::buildEntryIdentifier($path, Cache::TAG_FOLDER_CONTENTS),
+            Cache::buildEntryIdentifier($path, Cache::TAG_FOLDER_SUBTREE),
+        ];
+
+        $currentIdentifier = $folderIdentifier;
+        while ($currentIdentifier !== '/') {
+            $parentIdentifier = dirname(rtrim($currentIdentifier, '/'));
+            $currentIdentifier = ($parentIdentifier === '/' || $parentIdentifier === '.' || $parentIdentifier === '')
+                ? '/'
+                : $parentIdentifier . '/';
+
+            $tags[] = Cache::buildEntryIdentifier(
+                $this->getStreamWrapperPath($currentIdentifier),
+                Cache::TAG_FOLDER_SUBTREE
+            );
+        }
+
+        Cache::getCacheFrontend()->flushByTags($tags);
     }
 }
