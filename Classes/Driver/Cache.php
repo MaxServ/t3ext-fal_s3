@@ -34,6 +34,27 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class Cache extends LruArrayCache
 {
     /**
+     * Entry prefixes: stat information of a file or folder, the direct
+     * children of a folder, a complete folder subtree, the contents
+     * of an online media file and the file/folder counts of a folder.
+     */
+    public const PREFIX_STAT = 'stat';
+    public const PREFIX_LISTING = 'listing';
+    public const PREFIX_RECURSIVE_LISTING = 'listing-recursive';
+    public const PREFIX_FILE_CONTENTS = 'file-contents';
+    public const PREFIX_FILE_COUNT = 'count-files';
+    public const PREFIX_RECURSIVE_FILE_COUNT = 'count-files-recursive';
+    public const PREFIX_FOLDER_COUNT = 'count-folders';
+    public const PREFIX_RECURSIVE_FOLDER_COUNT = 'count-folders-recursive';
+
+    /**
+     * Tag prefixes: entries depending on the direct contents of a folder
+     * and entries depending on the complete subtree below a folder.
+     */
+    public const TAG_FOLDER_CONTENTS = 'folder-contents';
+    public const TAG_FOLDER_SUBTREE = 'folder-subtree';
+
+    /**
      * @var VariableFrontend
      */
     protected static $cacheFrontend;
@@ -50,14 +71,23 @@ class Cache extends LruArrayCache
     {
         $key = rtrim($key, '/');
         $cacheEntry = parent::get($key);
-        if ($cacheEntry) {
+        if ($cacheEntry !== null) {
             return $cacheEntry;
         }
 
         $cacheFrontend = self::getCacheFrontend();
         $entryIdentifier = self::buildEntryIdentifier($key);
 
-        return $cacheFrontend->get($entryIdentifier);
+        $cacheEntry = $cacheFrontend->get($entryIdentifier);
+        if ($cacheEntry === false) {
+            return null;
+        }
+
+        // keep entries fetched from the shared cache in the runtime LRU cache,
+        // the AWS StreamWrapper consults this cache on every stat call
+        parent::set($key, $cacheEntry);
+
+        return $cacheEntry;
     }
 
     /**
@@ -102,7 +132,7 @@ class Cache extends LruArrayCache
      *
      * @return string
      */
-    public static function buildEntryIdentifier(string $key, string $prefix = 'fi'): string
+    public static function buildEntryIdentifier(string $key, string $prefix = self::PREFIX_STAT): string
     {
         return $prefix . '-' . md5($key);
     }
