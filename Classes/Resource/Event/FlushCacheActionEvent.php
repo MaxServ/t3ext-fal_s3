@@ -47,7 +47,7 @@ class FlushCacheActionEvent
                 'id' => self::ITEM_KEY,
                 'title' => 'fal_s3.messages:flushFalS3Cache',
                 'description' => 'fal_s3.messages:flushFalS3Cache.description',
-                'href' => (string)$uriBuilder->buildUriFromRoute(self::ITEM_KEY),
+                'endpoint' => (string)$uriBuilder->buildUriFromRoute(self::ITEM_KEY),
                 'iconIdentifier' => self::ITEM_ICON_IDENTIFIER
             ];
         } catch (RouteNotFoundException) {

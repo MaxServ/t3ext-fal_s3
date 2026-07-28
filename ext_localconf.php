@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use MaxServ\FalS3\Driver\AmazonS3Driver;
+use MaxServ\FalS3\Resource\CrossStorageAwareProcessedFileRepository;
 use MaxServ\FalS3\Service\Extraction\ExifToolMetadataExtraction;
 use MaxServ\FalS3\Service\Extraction\PdfinfoMetadataExtraction;
 use MaxServ\FalS3\Service\Extraction\PhpMetadataExtraction;
@@ -10,6 +11,7 @@ use MaxServ\FalS3\Service\Extraction\TikaLanguageDetector;
 use MaxServ\FalS3\Service\Extraction\TikaMetadataExtraction;
 use TYPO3\CMS\Core\Resource\Driver\DriverRegistry;
 use TYPO3\CMS\Core\Resource\FileType;
+use TYPO3\CMS\Core\Resource\ProcessedFileRepository;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -56,6 +58,10 @@ $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations']['offli
             'no-store' => true
         ]
     ]
+];
+
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][ProcessedFileRepository::class] = [
+    'className' => CrossStorageAwareProcessedFileRepository::class,
 ];
 
 // Register cache 'tx_fal_s3'

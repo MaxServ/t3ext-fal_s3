@@ -62,8 +62,8 @@
 !/Classes/Middleware
 !/Classes/Middleware/*.php
 !/Classes/Resource
-!/Classes/Resource/Event
-!/Classes/Resource/Event/*.php
+!/Classes/Resource/**
+!/Classes/Resource/**/*.php
 !/Classes/Service
 !/Classes/Service/Extraction
 !/Classes/Service/Extraction/*.php
