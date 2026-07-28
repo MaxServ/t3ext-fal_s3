@@ -18,10 +18,11 @@ namespace MaxServ\FalS3\Tests\Unit\Driver;
  */
 
 use MaxServ\FalS3\Driver\AmazonS3Driver;
-use Nimut\TestingFramework\TestCase\UnitTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException;
 use TYPO3\CMS\Core\Resource\Exception\InvalidPathException;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
  * Class AmazonS3DriverTest
@@ -37,11 +38,9 @@ class AmazonS3DriverTest extends UnitTestCase
     }
 
     /**
-     * @param array $configurationKey
-     * @param array $configuration
      * @throws InvalidConfigurationException
-     * @dataProvider processConfigurationDataProvider
      */
+    #[DataProvider('processConfigurationDataProvider')]
     public function testProcessConfigurationThrowsErrorOnInvalidConfiguration(
         array $configurationKey,
         array $configuration
@@ -54,10 +53,7 @@ class AmazonS3DriverTest extends UnitTestCase
         $driver->processConfiguration();
     }
 
-    /**
-     * @return array
-     */
-    public function processConfigurationDataProvider(): array
+    public static function processConfigurationDataProvider(): array
     {
         return [
             [
@@ -113,15 +109,10 @@ class AmazonS3DriverTest extends UnitTestCase
     }
 
     /**
-     * @param array $configurationKey
-     * @param array $configuration
-     * @param string $fileName
-     * @param string $expected
-     *
      * @throws InvalidConfigurationException
      * @throws InvalidPathException
-     * @dataProvider getPublicUrlDataProvider
      */
+    #[DataProvider('getPublicUrlDataProvider')]
     public function testGetPublicUrlReturnsCorrectUrlBasedOnSuppliedConfiguration(
         array $configurationKey,
         array $configuration,
@@ -139,10 +130,7 @@ class AmazonS3DriverTest extends UnitTestCase
         static::assertEquals($expected, $publicUrl);
     }
 
-    /**
-     * @return array
-     */
-    public function getPublicUrlDataProvider(): array
+    public static function getPublicUrlDataProvider(): array
     {
         return [
             [

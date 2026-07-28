@@ -17,8 +17,6 @@ class TikaLanguageDetector extends \Causal\Extractor\Service\Extraction\TikaLang
      * Returns array of strings with driver names of Drivers which are supported,
      * If the driver did not register a name, it's the class name.
      * empty array indicates no restrictions.
-     *
-     * @return array
      */
     public function getDriverRestrictions(): array
     {
