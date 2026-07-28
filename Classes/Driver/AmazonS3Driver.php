@@ -994,8 +994,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
     /**
      * Extracts a specific FileInformation from the FileSystems.
      *
-     *
-     * @return bool|int|string
      * @throws \InvalidArgumentException
      */
     public function getSpecificFileInformation(string $fileIdentifier, string $path, string $property): string|int|array|false|null
@@ -1254,14 +1252,11 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
 
     /**
      * @param $fileName
-     * @param $charset
      * @throws InvalidFileNameException
      */
-    public function sanitizeFileName(string $fileName, string $charset = 'utf-8'): string
+    public function sanitizeFileName(string $fileName): string
     {
-        if ($charset === 'utf-8') {
-            $fileName = \Normalizer::normalize($fileName) ?: $fileName;
-        }
+        $fileName = \Normalizer::normalize($fileName) ?: $fileName;
 
         // Unlike the LocalDriver, we don't need an exception for UTF-8 here since we use S3 as storage.
         // Strip the filename from unwanted characters, replace them with an underscore

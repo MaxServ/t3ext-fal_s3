@@ -127,7 +127,7 @@ class AmazonS3DriverTest extends UnitTestCase
 
         $publicUrl = $driver->getPublicUrl($fileName);
 
-        static::assertEquals($expected, $publicUrl);
+        self::assertEquals($expected, $publicUrl);
     }
 
     public static function getPublicUrlDataProvider(): array
