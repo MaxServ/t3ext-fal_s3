@@ -55,7 +55,7 @@ class RemoteObjectUpdateEvent
     {
         try {
             $file = GeneralUtility::makeInstance(ResourceFactory::class)->getFileObject($fileUid);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return;
         }
 
@@ -73,7 +73,7 @@ class RemoteObjectUpdateEvent
             $processedFiles = $processedFileRepository->findAllByOriginalFile($file);
             array_walk(
                 $processedFiles,
-                function (ProcessedFile $processedFile) {
+                function (ProcessedFile $processedFile): void {
                     $this->updateCacheControlDirectivesForRemoteObject($processedFile);
                 }
             );
@@ -106,7 +106,7 @@ class RemoteObjectUpdateEvent
                         'Key' => $key
                     ]
                 );
-            } catch (\Exception $e) {
+            } catch (\Exception) {
                 // fail silently if a file doesn't exist
             }
         }
@@ -126,7 +126,7 @@ class RemoteObjectUpdateEvent
             && $currentResource->hasKey('Metadata')
             && is_array($currentResource->get('Metadata'))
             && $currentResource->hasKey('CacheControl')
-            && strcmp($currentResource->get('CacheControl'), $cacheControl) !== 0
+            && strcmp((string)$currentResource->get('CacheControl'), $cacheControl) !== 0
         ) {
             $client->copyObject(
                 [

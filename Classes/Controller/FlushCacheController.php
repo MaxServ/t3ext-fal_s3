@@ -17,7 +17,6 @@ class FlushCacheController
      * Flushes the Fal S3 cache.
      *
      * @param ServerRequestInterface $request the current request
-     * @return ResponseInterface
      * @throws NoSuchCacheException
      */
     public function flushCache(ServerRequestInterface $request): ResponseInterface

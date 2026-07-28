@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     \MaxServ\FalS3\Resource\Event\FlushCacheActionEvent::ITEM_ICON_IDENTIFIER => [
         'provider' => \TYPO3\CMS\Core\Imaging\IconProvider\SvgIconProvider::class,

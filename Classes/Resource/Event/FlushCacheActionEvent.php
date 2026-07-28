@@ -21,7 +21,7 @@ class FlushCacheActionEvent
             return;
         }
         $cacheActionConfiguration = $this->getCacheActionConfiguration();
-        if (!empty($cacheActionConfiguration)) {
+        if ($cacheActionConfiguration !== []) {
             $event->addCacheAction($cacheActionConfiguration);
             $event->addCacheActionIdentifier(self::ITEM_KEY);
         }
@@ -29,7 +29,6 @@ class FlushCacheActionEvent
 
     /**
      * Check if user has right to access the flush cache item
-     * @return bool
      */
     protected function isCacheItemAvailable(): bool
     {
@@ -51,7 +50,7 @@ class FlushCacheActionEvent
                 'href' => (string)$uriBuilder->buildUriFromRoute(self::ITEM_KEY),
                 'iconIdentifier' => self::ITEM_ICON_IDENTIFIER
             ];
-        } catch (RouteNotFoundException $e) {
+        } catch (RouteNotFoundException) {
             // Do nothing, i.e. do not add the menu item if the AJAX route cannot be found
             return [];
         }
