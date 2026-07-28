@@ -12,7 +12,9 @@ use TYPO3\CMS\Core\Resource\ResourceStorage;
 
 class RemoteObjectUtility
 {
+    /** @var array<int, S3Client> map of storage uid to S3 client */
     protected static array $clients = [];
+    /** @var array<int, array<string, mixed>> map of storage uid to driver configuration */
     protected static array $driverConfigurations = [];
 
     public static function resolveClientForStorage(ResourceStorage $storage): ?S3ClientInterface
@@ -42,6 +44,9 @@ class RemoteObjectUtility
         return $client;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public static function resolveDriverConfigurationForStorage(ResourceStorage $storage): array
     {
         $driverConfiguration = [];

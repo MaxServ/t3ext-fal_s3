@@ -17,6 +17,8 @@ class ExifToolMetadataExtraction extends \Causal\Extractor\Service\Extraction\Ex
      * Returns array of strings with driver names of Drivers which are supported,
      * If the driver did not register a name, it's the class name.
      * empty array indicates no restrictions.
+     *
+     * @return array<int, string>
      */
     public function getDriverRestrictions(): array
     {

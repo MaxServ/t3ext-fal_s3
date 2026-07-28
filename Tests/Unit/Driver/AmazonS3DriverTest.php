@@ -30,7 +30,7 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 class AmazonS3DriverTest extends UnitTestCase
 {
     /**
-     * @param $configuration
+     * @param array<string, mixed> $configuration
      */
     protected function setConfiguration(array $configuration): void
     {
@@ -38,6 +38,8 @@ class AmazonS3DriverTest extends UnitTestCase
     }
 
     /**
+     * @param array<string, string> $configurationKey
+     * @param array<string, mixed> $configuration
      * @throws InvalidConfigurationException
      */
     #[DataProvider('processConfigurationDataProvider')]
@@ -53,6 +55,9 @@ class AmazonS3DriverTest extends UnitTestCase
         $driver->processConfiguration();
     }
 
+    /**
+     * @return array<array{array<string, string>, array<string, mixed>}>
+     */
     public static function processConfigurationDataProvider(): array
     {
         return [
@@ -109,6 +114,8 @@ class AmazonS3DriverTest extends UnitTestCase
     }
 
     /**
+     * @param array<string, string> $configurationKey
+     * @param array<string, mixed> $configuration
      * @throws InvalidConfigurationException
      * @throws InvalidPathException
      */
@@ -130,6 +137,9 @@ class AmazonS3DriverTest extends UnitTestCase
         self::assertEquals($expected, $publicUrl);
     }
 
+    /**
+     * @return array<array{array<string, string>, array<string, mixed>, string, string}>
+     */
     public static function getPublicUrlDataProvider(): array
     {
         return [

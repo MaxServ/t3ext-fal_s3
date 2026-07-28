@@ -32,6 +32,9 @@ class FalS3PreconnectMiddleware implements MiddlewareInterface
         return $response;
     }
 
+    /**
+     * @return array<string>
+     */
     protected function getPreconnectHeaders(): array
     {
         $linkHeaders = [];

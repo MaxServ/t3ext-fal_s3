@@ -11,6 +11,9 @@
 !/CHANGELOG.md
 !/LICENSE
 
+# Static analysis / code style tooling
+!/phpstan.neon
+
 # Configuration
 !/Configuration
 !/Configuration/Backend

@@ -7,6 +7,7 @@ namespace MaxServ\FalS3\Driver;
 use Aws\S3\S3Client;
 use Aws\S3\StreamWrapper;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
@@ -33,11 +34,18 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
     public const DRIVER_KEY = 'MaxServ.FalS3';
     protected S3Client $s3Client;
     protected ?ResourceStorage $storage = null;
+    /** @var array<string, string> map of file identifier to local temporary file path */
     protected array $temporaryFiles = [];
+    /** @var array<string, bool> map of path to file existence */
     protected array $fileExistsCache = [];
+    /** @var array<string, bool> map of path to folder existence */
     protected array $folderExistsCache = [];
+    /** @var array<string, array<string>> map of folder identifier to its recursive entry identifiers */
     protected array $recursiveFolderEntriesCache = [];
 
+    /**
+     * @param array<string, mixed> $configuration
+     */
     public function __construct(array $configuration = [])
     {
         parent::__construct($configuration);
@@ -256,7 +264,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
     /**
      * Renames a folder in this storage.
      *
-     * @return array A map of old to new file identifiers of all affected resources
+     * @return array<string, string> A map of old to new file identifiers of all affected resources
      * @throws InvalidPathException
      * @throws InvalidFileNameException
      * @throws NoSuchCacheException
@@ -267,7 +275,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
     {
         $folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
         $newName = $this->sanitizeFileName($newName);
-        $newName = trim($newName, '/');
+        $newName = trim($newName, '/') . '/';
 
         $parentFolderName = dirname($folderIdentifier);
 
@@ -278,14 +286,13 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         }
 
         $parentFolderName = $this->canonicalizeAndCheckFolderIdentifier($parentFolderName);
-
-        $newIdentifier = $this->canonicalizeAndCheckFolderIdentifier($parentFolderName . $newName . '/');
+        $newIdentifier = $this->canonicalizeAndCheckFolderIdentifier($parentFolderName . $newName);
 
         if ($this->fileExists($newIdentifier) || $this->folderExists($newIdentifier)) {
             throw new ExistingTargetFileNameException('A file or folder with the name of the moved folder already exists', 1689242245);
         }
 
-        return $this->moveFolderWithinStorage($folderIdentifier, $newIdentifier, '');
+        return $this->moveFolderWithinStorage($folderIdentifier, $parentFolderName, $newName);
     }
 
     /**
@@ -326,8 +333,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
             '/'
         );
 
-        /** @var \TYPO3\CMS\Core\Http\ServerRequest $request */
-        $request = $GLOBALS['TYPO3_REQUEST'] ?? null;
+        $request = $this->getRequest();
         $modifyingRequestMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
         // Prevent duplicate calls to redis (e.g. in the filelist, which calls fileExists _a lot_ for the same file)
         // by caching the result in memory.
@@ -623,7 +629,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
     /**
      * Folder equivalent to moveFileWithinStorage().
      *
-     * @return array All files which are affected, map of old => new file identifiers
+     * @return array<string, string> All files which are affected, map of old => new file identifiers
      * @throws InvalidPathException
      * @throws NoSuchCacheException
      * @throws ExistingTargetFolderException
@@ -699,10 +705,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         /**
          * Make sure the target folder exists before trying to copy folders.
          * The TYPO3 ResourceDriver will throw an exception when copying files in the filelist or at processing images.
+         * The check if the folder exists is already done in the if-statement above, no need to re-check.
          */
-        if (!$this->folderExists($targetFolderIdentifier)) {
-            $this->createFolder($targetFolderIdentifier);
-        }
+        $this->createFolder($targetFolderIdentifier);
 
         foreach ($sourceDirectoryContents as $sourceEntry) {
             $sourcePath = $this->getStreamWrapperPath($sourceEntry);
@@ -944,8 +949,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
     /**
      * Returns information about a file.
      *
-     * @param array $propertiesToExtract Array of properties which are be extracted
+     * @param array<string> $propertiesToExtract Array of properties which are be extracted
      *                                   If empty all will be extracted
+     * @return array<string, mixed>
      * @throws InvalidPathException
      */
     public function getFileInfoByIdentifier(string $fileIdentifier, array $propertiesToExtract = []): array
@@ -962,7 +968,8 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
      *
      * @param string $fileIdentifier The fileIdentifier
      * @param string $path The path to the file
-     * @param array $propertiesToExtract array of properties which should be returned, if empty all will be extracted
+     * @param array<string> $propertiesToExtract array of properties which should be returned, if empty all will be extracted
+     * @return array<string, mixed>
      */
     protected function extractFileInformation(
         string $fileIdentifier,
@@ -994,9 +1001,10 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
     /**
      * Extracts a specific FileInformation from the FileSystems.
      *
+     * @return string|int|false|null
      * @throws \InvalidArgumentException
      */
-    public function getSpecificFileInformation(string $fileIdentifier, string $path, string $property): string|int|array|false|null
+    public function getSpecificFileInformation(string $fileIdentifier, string $path, string $property): string|int|false|null
     {
         return match ($property) {
             'size' => (int)filesize($path),
@@ -1043,14 +1051,14 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
     /**
      * Returns a list of files inside the specified path
      *
-     * @param array $filenameFilterCallbacks callbacks for filtering the items
+     * @param array<callable> $filenameFilterCallbacks callbacks for filtering the items
      * @param string $sort Property name used to sort the items.
      *                     Among them may be: '' (empty, no sorting), name,
      *                     fileext, size, tstamp and rw.
      *                     If a driver does not support the given property, it
      *                     should fall back to "name".
      * @param bool $sortRev TRUE to indicate reverse sorting (last to first)
-     * @return array of FileIdentifiers
+     * @return array<string> of FileIdentifiers
      * @throws InvalidPathException
      * @throws NoSuchCacheException
      */
@@ -1063,10 +1071,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         string $sort = '',
         bool $sortRev = false
     ): array {
-        if ($start === false && $numberOfItems === false) {
-            return [];
-        }
-
         $folderEntries = $this->resolveFolderEntries(
             $folderIdentifier,
             $recursive,
@@ -1101,14 +1105,14 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
     /**
      * Returns a list of folders inside the specified path
      *
-     * @param array $folderNameFilterCallbacks callbacks for filtering the items
+     * @param array<callable> $folderNameFilterCallbacks callbacks for filtering the items
      * @param string $sort Property name used to sort the items.
      *                     Among them may be: '' (empty, no sorting), name,
      *                     fileext, size, tstamp and rw.
      *                     If a driver does not support the given property, it
      *                     should fall back to "name".
      * @param bool $sortRev TRUE to indicate reverse sorting (last to first)
-     * @return array of Folder Identifier
+     * @return array<string|int, string> of Folder Identifier
      * @throws InvalidPathException
      * @throws NoSuchCacheException
      */
@@ -1121,10 +1125,6 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         string $sort = '',
         bool $sortRev = false
     ): array {
-        if ($start === false && $numberOfItems === false) {
-            return [];
-        }
-
         $folderEntries = $this->resolveFolderEntries(
             $folderIdentifier,
             $recursive,
@@ -1159,7 +1159,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
     /**
      * Returns the number of files inside the specified path
      *
-     * @param array $filenameFilterCallbacks callbacks for filtering the items
+     * @param array<callable> $filenameFilterCallbacks callbacks for filtering the items
      * @return int Number of files in folder
      * @throws InvalidPathException
      * @throws NoSuchCacheException
@@ -1190,7 +1190,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
     /**
      * Returns the number of folders inside the specified path
      *
-     * @param array $folderNameFilterCallbacks callbacks for filtering the items
+     * @param array<callable> $folderNameFilterCallbacks callbacks for filtering the items
      * @return int Number of folders in folder
      * @throws InvalidPathException
      * @throws NoSuchCacheException
@@ -1222,6 +1222,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
     }
 
     /**
+     * @param array<string, mixed> $properties
      * @throws InvalidPathException
      */
     public function streamFile(string $identifier, array $properties): ResponseInterface
@@ -1299,10 +1300,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         return $basePath . $identifier;
     }
 
-    /**
-     * @param $path
-     */
-    protected function stripStreamWrapperPath($path): string
+    protected function stripStreamWrapperPath(string $path): string
     {
         $basePath = $this->configuration['stream_protocol'] . '://' . $this->configuration['bucket'];
 
@@ -1317,7 +1315,8 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
     }
 
     /**
-     *
+     * @param array<callable> $filterMethods
+     * @return array<string>
      * @throws InvalidPathException
      * @throws NoSuchCacheException
      */
@@ -1564,6 +1563,8 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
     /**
      * Checks if an entry is in or below a folder excluded by name, only
      * looking at path segments below the folder being listed.
+     *
+     * @param array<string> $excludedFolders
      */
     protected function isWithinExcludedFolder(
         string $entryIdentifier,
@@ -1595,6 +1596,8 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
      * and expects on url_stat lookups.
      *
      * @see \Aws\S3\StreamWrapper::formatUrlStat()
+     *
+     * @return array<int|string, int>
      */
     protected function buildFolderStat(): array
     {
@@ -1610,6 +1613,8 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
      * Copied because the SDK method is private; S3 has no metadata for
      * folders (they are only inferred from object keys), so the all-zeros
      * template matching PHP's stat() format is the only possible content.
+     *
+     * @return array<int|string, int>
      */
     protected function getStatTemplate(): array
     {
@@ -1634,7 +1639,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
      * Applies a set of filter methods to a file name to find out if it should be used or not. This is e.g. used by
      * directory listings.
      *
-     * @param array $filterMethods The filter methods to use
+     * @param array<callable> $filterMethods The filter methods to use
      * @throws \RuntimeException
      */
     protected function applyFilterMethodsToDirectoryItem(
@@ -1666,6 +1671,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
 
     /**
      * Sort the directory entries by a certain key
+     *
+     * @param array<string> $folderEntries
+     * @return array<string>
      */
     protected function sortFolderEntries(array $folderEntries, string $method = '', bool $reverse = false): array
     {
@@ -1773,5 +1781,10 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         }
 
         Cache::getCacheFrontend()->flushByTags($tags);
+    }
+
+    private function getRequest(): ?ServerRequestInterface
+    {
+        return $GLOBALS['TYPO3_REQUEST'] ?? null;
     }
 }

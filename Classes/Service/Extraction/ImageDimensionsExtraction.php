@@ -16,6 +16,7 @@ class ImageDimensionsExtraction implements ExtractorInterface
 {
     /**
      * @inheritDoc
+     * @return array<int>
      */
     public function getFileTypeRestrictions(): array
     {
@@ -24,6 +25,7 @@ class ImageDimensionsExtraction implements ExtractorInterface
 
     /**
      * @inheritDoc
+     * @return array<string>
      */
     public function getDriverRestrictions(): array
     {
@@ -57,6 +59,8 @@ class ImageDimensionsExtraction implements ExtractorInterface
 
     /**
      * @inheritDoc
+     * @param array<string, mixed> $previousExtractedData
+     * @return array<string, mixed>
      */
     public function extractMetaData(File $file, array $previousExtractedData = []): array
     {
@@ -69,6 +73,9 @@ class ImageDimensionsExtraction implements ExtractorInterface
         return $previousExtractedData;
     }
 
+    /**
+     * @return array<string, int>
+     */
     public function getImageDimensions(FileInterface $file): array
     {
         $fileNameAndPath = $file->getForLocalProcessing(false);

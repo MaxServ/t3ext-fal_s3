@@ -12,7 +12,6 @@ use TYPO3\CMS\Core\Resource\AbstractFile;
 use TYPO3\CMS\Core\Resource\Event\AfterFileMetaDataCreatedEvent;
 use TYPO3\CMS\Core\Resource\Event\AfterFileMetaDataUpdatedEvent;
 use TYPO3\CMS\Core\Resource\Event\AfterFileProcessingEvent;
-use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Resource\ProcessedFileRepository;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
@@ -46,6 +45,9 @@ class RemoteObjectUpdateEvent
         }
     }
 
+    /**
+     * @param array<string, mixed> $fileInfo
+     */
     protected function remoteObjectNeedsUpdate(array $fileInfo): bool
     {
         return array_key_exists('mtime', $fileInfo) && (int)$fileInfo['mtime'] > (time() - 30);
@@ -59,25 +61,19 @@ class RemoteObjectUpdateEvent
             return;
         }
 
-        if (!$file instanceof File) {
-            return;
-        }
-
         if ($file->getStorage()->getDriverType() !== AmazonS3Driver::DRIVER_KEY) {
             return;
         }
 
         $this->updateCacheControlDirectivesForRemoteObject($file);
         $processedFileRepository = GeneralUtility::makeInstance(ProcessedFileRepository::class);
-        if ($processedFileRepository instanceof ProcessedFileRepository) {
-            $processedFiles = $processedFileRepository->findAllByOriginalFile($file);
-            array_walk(
-                $processedFiles,
-                function (ProcessedFile $processedFile): void {
-                    $this->updateCacheControlDirectivesForRemoteObject($processedFile);
-                }
-            );
-        }
+        $processedFiles = $processedFileRepository->findAllByOriginalFile($file);
+        array_walk(
+            $processedFiles,
+            function (ProcessedFile $processedFile): void {
+                $this->updateCacheControlDirectivesForRemoteObject($processedFile);
+            }
+        );
     }
 
     protected function updateCacheControlDirectivesForRemoteObject(AbstractFile $file): void
