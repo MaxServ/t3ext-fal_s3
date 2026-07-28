@@ -6,6 +6,9 @@ namespace MaxServ\FalS3\Utility;
 
 class FlexFormUtility
 {
+    /**
+     * @param array<string, mixed> $parameters
+     */
     public function getStorageConfigurations(array &$parameters): void
     {
         if (!is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations'] ?? null)) {

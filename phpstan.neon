@@ -1,0 +1,10 @@
+parameters:
+    level: 6
+    treatPhpDocTypesAsCertain: false
+    paths:
+        - Classes
+        - Configuration
+        - Tests
+
+includes:
+    - .Build/vendor/saschaegerer/phpstan-typo3/extension.neon

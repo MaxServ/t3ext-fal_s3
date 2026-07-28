@@ -7,7 +7,7 @@ namespace MaxServ\FalS3\Driver;
 use Aws\LruArrayCache;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException;
-use TYPO3\CMS\Core\Cache\Frontend\VariableFrontend;
+use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class Cache extends LruArrayCache
@@ -33,10 +33,7 @@ class Cache extends LruArrayCache
     public const TAG_FOLDER_CONTENTS = 'folder-contents';
     public const TAG_FOLDER_SUBTREE = 'folder-subtree';
 
-    /**
-     * @var VariableFrontend
-     */
-    protected static $cacheFrontend;
+    protected static ?FrontendInterface $cacheFrontend = null;
 
     /**
      * Get a cache item by key.
@@ -113,7 +110,7 @@ class Cache extends LruArrayCache
     /**
      * @throws NoSuchCacheException
      */
-    public static function getCacheFrontend(): VariableFrontend
+    public static function getCacheFrontend(): FrontendInterface
     {
         if (empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3'])) {
             throw new NoSuchCacheException('Missing cache configuration for tx_fal_s3 extension', 1655459397);

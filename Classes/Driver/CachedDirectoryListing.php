@@ -21,6 +21,9 @@ class CachedDirectoryListing
     ) {
     }
 
+    /**
+     * @return array<string> file and folder identifiers
+     */
     public function getEntries(string $path, int $iteratorMode): array
     {
         $cacheEntryIdentifier = Cache::buildEntryIdentifier($path, Cache::PREFIX_LISTING);
