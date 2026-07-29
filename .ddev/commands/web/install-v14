@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION=v12
+VERSION=v14
 
 rm -rf /var/www/html/$VERSION/*
 mkdir -p /var/www/html/$VERSION/

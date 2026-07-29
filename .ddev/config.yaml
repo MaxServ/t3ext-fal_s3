@@ -7,8 +7,7 @@ xdebug_enabled: false
 no_project_mount: true
 additional_hostnames:
     - docs.fals3
-    - v12.fals3
-    - v13.fals3
+    - v14.fals3
 additional_fqdns: []
 database:
     type: mariadb
@@ -65,7 +64,7 @@ corepack_enable: false
 
 # host_xhgui_port: 8142
 # Can be used to change the host binding port of the xhgui
-# application. Rarely used; only when port conflict and 
+# application. Rarely used; only when port conflict and
 # bind_all_ports is used (normally with router disabled)
 
 # xhprof_enabled: false  # Set to true to enable Xhprof and "ddev start" or "ddev restart"
