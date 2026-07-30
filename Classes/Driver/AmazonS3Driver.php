@@ -876,21 +876,27 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
     public function getFileForLocalProcessing(string $fileIdentifier, bool $writable = true): string
     {
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
+        $temporaryFilePath = $this->getTemporaryPathForFile($fileIdentifier);
+        $path = $this->getStreamWrapperPath($fileIdentifier);
+        // Try to copy the file from remote to local if reconstructing processing information needs the file.
+        // In case of the DeferredBackendImageProcessor, no file will be created on the bucket.
+        // A `sys_file_processedfile` record will be created which results in `isPersisted` to be true...
+        // The `temporaryFilePath` will just be used to reconstruct the fullPath in the ImageResource object.
+        @copy($path, $temporaryFilePath);
 
+        if (!$writable) {
+            $this->temporaryFiles[$fileIdentifier] = $temporaryFilePath;
+            return $temporaryFilePath;
+        }
+
+        // For real processing, the file has to exist on the bucket.
+        // To prevent issues later in the processing process, we have to check here if the file exists.
         if (!$this->fileExists($fileIdentifier)) {
             // LocalDriver throws a RuntimeException if the file does not exist. We want the same behaviour.
             throw new \RuntimeException(
                 sprintf('File "%s" does no longer exist on the S3 storage', $fileIdentifier),
                 1654008397
             );
-        }
-
-        $temporaryFilePath = $this->getTemporaryPathForFile($fileIdentifier);
-        $path = $this->getStreamWrapperPath($fileIdentifier);
-        copy($path, $temporaryFilePath);
-
-        if (!$writable) {
-            $this->temporaryFiles[$fileIdentifier] = $temporaryFilePath;
         }
 
         return $temporaryFilePath;
