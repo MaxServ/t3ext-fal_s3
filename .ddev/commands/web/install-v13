@@ -16,8 +16,7 @@ composer req maxserv/sitepackage:^1.0 -n -d /var/www/html/$VERSION
 
 cd /var/www/html/$VERSION
 
-mysql -h db -u root -p"root" -e "DROP DATABASE ${VERSION};"
-mysql -h db -u root -p"root" -e "CREATE DATABASE ${VERSION};"
+mysql -h db -u root -p"root" -e "CREATE DATABASE IF NOT EXISTS ${VERSION};"
 
 vendor/bin/typo3 setup -n --dbname=$VERSION --password=$TYPO3_DB_PASSWORD --create-site="https://${VERSION}.fals3.ddev.site" --admin-user-password=$TYPO3_SETUP_ADMIN_PASSWORD
 
