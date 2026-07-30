@@ -10,7 +10,6 @@ use MaxServ\FalS3\Service\Extraction\TikaLanguageDetector;
 use MaxServ\FalS3\Service\Extraction\TikaMetadataExtraction;
 use TYPO3\CMS\Core\Resource\Driver\DriverRegistry;
 use TYPO3\CMS\Core\Resource\FileType;
-use TYPO3\CMS\Core\Resource\ProcessedFileRepository;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
