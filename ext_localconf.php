@@ -36,7 +36,7 @@ $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations']['offli
     'defaultFolder' => 'user_upload',
     'basePath' => '/assets/',
     'cacheControl' => [
-        'file:' . (string)FileType::TEXT->value => [
+        'file:' . FileType::TEXT->value => [
             'max-age' => 3600,
             'private' => true
         ],
