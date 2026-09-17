@@ -224,8 +224,11 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
      * @throws InvalidPathException
      * @throws ExistingTargetFolderException
      */
-    public function createFolder(string $newFolderName, string $parentFolderIdentifier = '', bool $recursive = false): string
-    {
+    public function createFolder(
+        string $newFolderName,
+        string $parentFolderIdentifier = '',
+        bool $recursive = false
+    ): string {
         $parentFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($parentFolderIdentifier);
         $newFolderName = trim($newFolderName, '/');
 
@@ -239,7 +242,10 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         $identifier = $this->canonicalizeAndCheckFolderIdentifier($parentFolderIdentifier . $newFolderName . '/');
 
         if ($this->fileExists($identifier)) {
-            throw new ExistingTargetFolderException('A file with the name of the created folder already exists', 1689241878);
+            throw new ExistingTargetFolderException(
+                'A file with the name of the created folder already exists',
+                1689241878
+            );
         }
 
         $path = $this->getStreamWrapperPath($identifier);
@@ -289,7 +295,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         $newIdentifier = $this->canonicalizeAndCheckFolderIdentifier($parentFolderName . $newName);
 
         if ($this->fileExists($newIdentifier) || $this->folderExists($newIdentifier)) {
-            throw new ExistingTargetFileNameException('A file or folder with the name of the moved folder already exists', 1689242245);
+            throw new ExistingTargetFileNameException(
+                'A file or folder with the name of the moved folder already exists', 1689242245
+            );
         }
 
         return $this->moveFolderWithinStorage($folderIdentifier, $parentFolderName, $newName);
@@ -394,15 +402,22 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
      * @throws NoSuchCacheException
      * @throws ExistingTargetFileNameException
      */
-    public function addFile(string $localFilePath, string $targetFolderIdentifier, string $newFileName = '', bool $removeOriginal = true): string
-    {
+    public function addFile(
+        string $localFilePath,
+        string $targetFolderIdentifier,
+        string $newFileName = '',
+        bool $removeOriginal = true
+    ): string {
         $targetFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($targetFolderIdentifier);
         $targetFileIdentifier = rtrim($targetFolderIdentifier, '/')
             . $this->canonicalizeAndCheckFileIdentifier($newFileName);
         $targetFilePath = $this->getStreamWrapperPath($targetFileIdentifier);
 
         if ($this->folderExists($targetFileIdentifier)) {
-            throw new ExistingTargetFileNameException('A folder with the name of the added file already exists', 1689242007);
+            throw new ExistingTargetFileNameException(
+                'A folder with the name of the added file already exists',
+                1689242007
+            );
         }
 
         copy($localFilePath, $targetFilePath);
@@ -432,7 +447,10 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         $absolutePath = $this->getStreamWrapperPath($targetFileIdentifier);
 
         if ($this->folderExists($targetFileIdentifier)) {
-            throw new ExistingTargetFileNameException('A folder with the name of the created file already exists', 1689242076);
+            throw new ExistingTargetFileNameException(
+                'A folder with the name of the created file already exists',
+                1689242076
+            );
         }
 
         // create an empty file using the putObject method instead of the wrapper
@@ -461,8 +479,11 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
      * @throws NoSuchCacheException
      * @throws ExistingTargetFileNameException
      */
-    public function copyFileWithinStorage(string $fileIdentifier, string $targetFolderIdentifier, string $fileName): string
-    {
+    public function copyFileWithinStorage(
+        string $fileIdentifier,
+        string $targetFolderIdentifier,
+        string $fileName
+    ): string {
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
         $targetFileIdentifier = $this->canonicalizeAndCheckFileIdentifier($targetFolderIdentifier . $fileName);
 
@@ -470,7 +491,10 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         $targetPath = $this->getStreamWrapperPath($targetFileIdentifier);
 
         if ($this->folderExists($targetFileIdentifier)) {
-            throw new ExistingTargetFileNameException('A folder with the name of the copied file already exists', 1689242141);
+            throw new ExistingTargetFileNameException(
+                'A folder with the name of the copied file already exists',
+                1689242141
+            );
         }
 
         copy($sourcePath, $targetPath);
@@ -509,7 +533,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         $newIdentifier = $this->canonicalizeAndCheckFileIdentifier($parentFolderName . $newName);
 
         if ($this->fileExists($newIdentifier) || $this->folderExists($newIdentifier)) {
-            throw new ExistingTargetFileNameException('A file or folder with the name of the renamed file already exists');
+            throw new ExistingTargetFileNameException(
+                'A file or folder with the name of the renamed file already exists'
+            );
         }
 
         $oldPath = $this->getStreamWrapperPath($fileIdentifier);
@@ -605,13 +631,19 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
      * @throws NoSuchCacheException
      * @throws ExistingTargetFileNameException
      */
-    public function moveFileWithinStorage(string $fileIdentifier, string $targetFolderIdentifier, string $newFileName): string
-    {
+    public function moveFileWithinStorage(
+        string $fileIdentifier,
+        string $targetFolderIdentifier,
+        string $newFileName
+    ): string {
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
         $targetFileIdentifier = $this->canonicalizeAndCheckFileIdentifier($targetFolderIdentifier . $newFileName);
 
         if ($this->folderExists($targetFileIdentifier)) {
-            throw new ExistingTargetFileNameException('A folder with the name of the moved file already exists', 1689242183);
+            throw new ExistingTargetFileNameException(
+                'A folder with the name of the moved file already exists',
+                1689242183
+            );
         }
 
         $sourcePath = $this->getStreamWrapperPath($fileIdentifier);
@@ -634,13 +666,19 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
      * @throws NoSuchCacheException
      * @throws ExistingTargetFolderException
      */
-    public function moveFolderWithinStorage(string $sourceFolderIdentifier, string $targetFolderIdentifier, string $newFolderName): array
-    {
+    public function moveFolderWithinStorage(
+        string $sourceFolderIdentifier,
+        string $targetFolderIdentifier,
+        string $newFolderName
+    ): array {
         $sourceFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($sourceFolderIdentifier);
         $targetFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($targetFolderIdentifier . $newFolderName);
 
         if ($this->fileExists($targetFolderIdentifier) || $this->folderExists($targetFolderIdentifier)) {
-            throw new ExistingTargetFolderException('A file or folder with the name of the moved folder already exists', 1689242245);
+            throw new ExistingTargetFolderException(
+                'A file or folder with the name of the moved folder already exists',
+                1689242245
+            );
         }
 
         $oldPath = $this->getStreamWrapperPath($sourceFolderIdentifier);
@@ -690,8 +728,11 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
      * @throws NoSuchCacheException
      * @throws ExistingTargetFileNameException
      */
-    public function copyFolderWithinStorage(string $sourceFolderIdentifier, string $targetFolderIdentifier, string $newFolderName): bool
-    {
+    public function copyFolderWithinStorage(
+        string $sourceFolderIdentifier,
+        string $targetFolderIdentifier,
+        string $newFolderName
+    ): bool {
         $sourceFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($sourceFolderIdentifier);
         $targetFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($targetFolderIdentifier) .
             ltrim($this->canonicalizeAndCheckFolderIdentifier($newFolderName), '/');
@@ -699,7 +740,9 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         $sourceDirectoryContents = $this->resolveFolderEntries($sourceFolderIdentifier, true, true, true);
 
         if ($this->fileExists($targetFolderIdentifier) || $this->folderExists($targetFolderIdentifier)) {
-            throw new ExistingTargetFileNameException('A file or folder with the name of the copied folder already exists');
+            throw new ExistingTargetFileNameException(
+                'A file or folder with the name of the copied folder already exists'
+            );
         }
 
         /**
@@ -1010,8 +1053,11 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
      * @return string|int|false|null
      * @throws \InvalidArgumentException
      */
-    public function getSpecificFileInformation(string $fileIdentifier, string $path, string $property): string|int|false|null
-    {
+    public function getSpecificFileInformation(
+        string $fileIdentifier,
+        string $path,
+        string $property
+    ): string|int|false|null {
         return match ($property) {
             'size' => (int)filesize($path),
             'atime' => fileatime($path),
@@ -1170,8 +1216,11 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
      * @throws InvalidPathException
      * @throws NoSuchCacheException
      */
-    public function countFilesInFolder(string $folderIdentifier, bool $recursive = false, array $filenameFilterCallbacks = []): int
-    {
+    public function countFilesInFolder(
+        string $folderIdentifier,
+        bool $recursive = false,
+        array $filenameFilterCallbacks = []
+    ): int {
         $folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
         $path = $this->getStreamWrapperPath($folderIdentifier);
 
@@ -1183,10 +1232,12 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         $count = Cache::getCacheFrontend()->get($cacheEntryIdentifier);
         if ($count === false) {
             $count = count($this->getFilesInFolder($folderIdentifier, 0, 0, $recursive, $filenameFilterCallbacks));
-            $cacheTags = [Cache::buildEntryIdentifier(
-                $path,
-                $recursive ? Cache::TAG_FOLDER_SUBTREE : Cache::TAG_FOLDER_CONTENTS
-            )];
+            $cacheTags = [
+                Cache::buildEntryIdentifier(
+                    $path,
+                    $recursive ? Cache::TAG_FOLDER_SUBTREE : Cache::TAG_FOLDER_CONTENTS
+                )
+            ];
             Cache::getCacheFrontend()->set($cacheEntryIdentifier, $count, $cacheTags, 0);
         }
 
@@ -1217,10 +1268,12 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         $count = Cache::getCacheFrontend()->get($cacheEntryIdentifier);
         if ($count === false) {
             $count = count($this->getFoldersInFolder($folderIdentifier, 0, 0, $recursive, $folderNameFilterCallbacks));
-            $cacheTags = [Cache::buildEntryIdentifier(
-                $path,
-                $recursive ? Cache::TAG_FOLDER_SUBTREE : Cache::TAG_FOLDER_CONTENTS
-            )];
+            $cacheTags = [
+                Cache::buildEntryIdentifier(
+                    $path,
+                    $recursive ? Cache::TAG_FOLDER_SUBTREE : Cache::TAG_FOLDER_CONTENTS
+                )
+            ];
             Cache::getCacheFrontend()->set($cacheEntryIdentifier, $count, $cacheTags, 0);
         }
 
@@ -1362,12 +1415,14 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
             if ($this->isWithinExcludedFolder($entry, $folderIdentifier, $excludedFolders)) {
                 continue;
             }
-            if (!$this->applyFilterMethodsToDirectoryItem(
-                $filterMethods,
-                basename($entry),
-                $entry,
-                $this->getParentFolderIdentifierOfIdentifier($entry)
-            )) {
+            if (
+                !$this->applyFilterMethodsToDirectoryItem(
+                    $filterMethods,
+                    basename($entry),
+                    $entry,
+                    $this->getParentFolderIdentifierOfIdentifier($entry)
+                )
+            ) {
                 continue;
             }
             $directoryEntries[$entry] = $entry;
@@ -1692,7 +1747,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
             $sortingValue = null;
 
             if ($method === 'fileext') {
-                $sortingValue = pathinfo((string) $identifier, PATHINFO_EXTENSION);
+                $sortingValue = pathinfo((string)$identifier, PATHINFO_EXTENSION);
             }
 
             if ($method === 'rw') {
