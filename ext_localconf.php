@@ -1,15 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 use MaxServ\FalS3\Driver\AmazonS3Driver;
 use MaxServ\FalS3\Service\Extraction\ExifToolMetadataExtraction;
-use MaxServ\FalS3\Service\Extraction\ImageDimensionsExtraction;
 use MaxServ\FalS3\Service\Extraction\PdfinfoMetadataExtraction;
 use MaxServ\FalS3\Service\Extraction\PhpMetadataExtraction;
 use MaxServ\FalS3\Service\Extraction\TikaLanguageDetector;
 use MaxServ\FalS3\Service\Extraction\TikaMetadataExtraction;
-use TYPO3\CMS\Core\Resource\AbstractFile;
 use TYPO3\CMS\Core\Resource\Driver\DriverRegistry;
-use TYPO3\CMS\Core\Resource\Index\ExtractorRegistry;
+use TYPO3\CMS\Core\Resource\FileType;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -36,23 +36,23 @@ $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations']['offli
     'defaultFolder' => 'user_upload',
     'basePath' => '/assets/',
     'cacheControl' => [
-        'file:' . (string)AbstractFile::FILETYPE_TEXT => [
+        'file:' . FileType::TEXT->value => [
             'max-age' => 3600,
             'private' => true
         ],
-        'file:' . AbstractFile::FILETYPE_IMAGE => [
+        'file:' . FileType::IMAGE->value => [
             'max-age' => 86400
         ],
-        'processed-file:' . AbstractFile::FILETYPE_IMAGE => [
+        'processed-file:' . FileType::IMAGE->value => [
             'max-age' => 604800
         ],
-        'file:' . AbstractFile::FILETYPE_AUDIO => [
+        'file:' . FileType::AUDIO->value => [
             'max-age' => 86400
         ],
-        'file:' . AbstractFile::FILETYPE_VIDEO => [
+        'file:' . FileType::VIDEO->value => [
             'max-age' => 86400
         ],
-        'file:' . AbstractFile::FILETYPE_APPLICATION => [
+        'file:' . FileType::APPLICATION->value => [
             'no-store' => true
         ]
     ]
@@ -60,10 +60,6 @@ $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations']['offli
 
 // Register cache 'tx_fal_s3'
 $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3']['groups'] ??= ['system'];
-
-// register extractor
-GeneralUtility::makeInstance(ExtractorRegistry::class)
-    ->registerExtractionService(ImageDimensionsExtraction::class);
 
 if (ExtensionManagementUtility::isLoaded('extractor')) {
     // phpcs:disable

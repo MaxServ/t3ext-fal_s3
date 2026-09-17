@@ -18,10 +18,11 @@ namespace MaxServ\FalS3\Tests\Unit\Driver;
  */
 
 use MaxServ\FalS3\Driver\AmazonS3Driver;
-use Nimut\TestingFramework\TestCase\UnitTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException;
 use TYPO3\CMS\Core\Resource\Exception\InvalidPathException;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
  * Class AmazonS3DriverTest
@@ -29,7 +30,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class AmazonS3DriverTest extends UnitTestCase
 {
     /**
-     * @param $configuration
+     * @param array<string, mixed> $configuration
      */
     protected function setConfiguration(array $configuration): void
     {
@@ -37,11 +38,11 @@ class AmazonS3DriverTest extends UnitTestCase
     }
 
     /**
-     * @param array $configurationKey
-     * @param array $configuration
+     * @param array<string, string> $configurationKey
+     * @param array<string, mixed> $configuration
      * @throws InvalidConfigurationException
-     * @dataProvider processConfigurationDataProvider
      */
+    #[DataProvider('processConfigurationDataProvider')]
     public function testProcessConfigurationThrowsErrorOnInvalidConfiguration(
         array $configurationKey,
         array $configuration
@@ -55,9 +56,9 @@ class AmazonS3DriverTest extends UnitTestCase
     }
 
     /**
-     * @return array
+     * @return array<array{array<string, string>, array<string, mixed>}>
      */
-    public function processConfigurationDataProvider(): array
+    public static function processConfigurationDataProvider(): array
     {
         return [
             [
@@ -113,15 +114,12 @@ class AmazonS3DriverTest extends UnitTestCase
     }
 
     /**
-     * @param array $configurationKey
-     * @param array $configuration
-     * @param string $fileName
-     * @param string $expected
-     *
+     * @param array<string, string> $configurationKey
+     * @param array<string, mixed> $configuration
      * @throws InvalidConfigurationException
      * @throws InvalidPathException
-     * @dataProvider getPublicUrlDataProvider
      */
+    #[DataProvider('getPublicUrlDataProvider')]
     public function testGetPublicUrlReturnsCorrectUrlBasedOnSuppliedConfiguration(
         array $configurationKey,
         array $configuration,
@@ -136,13 +134,13 @@ class AmazonS3DriverTest extends UnitTestCase
 
         $publicUrl = $driver->getPublicUrl($fileName);
 
-        static::assertEquals($expected, $publicUrl);
+        self::assertEquals($expected, $publicUrl);
     }
 
     /**
-     * @return array
+     * @return array<array{array<string, string>, array<string, mixed>, string, string}>
      */
-    public function getPublicUrlDataProvider(): array
+    public static function getPublicUrlDataProvider(): array
     {
         return [
             [

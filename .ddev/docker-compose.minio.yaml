@@ -2,7 +2,8 @@
 services:
   minio:
     container_name: ddev-${DDEV_SITENAME}-minio
-    image: ${MINIO_DOCKER_IMAGE:-minio/minio:latest}
+    # libreFS is a MinIO fork and still reads MINIO_* configuration keys.
+    image: ${LIBREFS_DOCKER_IMAGE:-ghcr.io/librefs/librefs:RELEASE.2026-05-04T00-42-47Z}
     environment:
       MINIO_VOLUMES: "/data"
       MC_CONFIG_DIR: "/root/.mc"

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace MaxServ\FalS3\Service\Extraction;
 
 use MaxServ\FalS3\Driver\AmazonS3Driver;
-use TYPO3\CMS\Core\Resource\AbstractFile;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\FileInterface;
+use TYPO3\CMS\Core\Resource\FileType;
 use TYPO3\CMS\Core\Resource\Index\ExtractorInterface;
 use TYPO3\CMS\Core\Type\File\ImageInfo;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -16,14 +16,16 @@ class ImageDimensionsExtraction implements ExtractorInterface
 {
     /**
      * @inheritDoc
+     * @return array<int>
      */
     public function getFileTypeRestrictions(): array
     {
-        return [AbstractFile::FILETYPE_IMAGE];
+        return [FileType::IMAGE->value];
     }
 
     /**
      * @inheritDoc
+     * @return array<string>
      */
     public function getDriverRestrictions(): array
     {
@@ -51,12 +53,14 @@ class ImageDimensionsExtraction implements ExtractorInterface
      */
     public function canProcess(File $file): bool
     {
-        return $file->getType() === AbstractFile::FILETYPE_IMAGE
+        return $file->getType() === FileType::IMAGE->value
             && $file->getStorage()->getDriverType() === AmazonS3Driver::DRIVER_KEY;
     }
 
     /**
      * @inheritDoc
+     * @param array<string, mixed> $previousExtractedData
+     * @return array<string, mixed>
      */
     public function extractMetaData(File $file, array $previousExtractedData = []): array
     {
@@ -69,6 +73,9 @@ class ImageDimensionsExtraction implements ExtractorInterface
         return $previousExtractedData;
     }
 
+    /**
+     * @return array<string, int>
+     */
     public function getImageDimensions(FileInterface $file): array
     {
         $fileNameAndPath = $file->getForLocalProcessing(false);

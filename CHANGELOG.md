@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0] - 2026-09-17
+### Breaking
+- Removed support for TYPO3 12
+- Removed support for PHP8.1
+
+### Added
+- Support for TYPO3 14
+
+### Changed
+- Moved AmazonS3Driver functionality back to a single class. This reverts the `AbstractAmazonS3Driver.php` previously added in [#89](https://github.com/MaxServ/t3ext-fal_s3/pull/89)
+
 ## [4.0.0] - 2026-07-07
 ### Added
 - Recursive folder listings are composed from the direct children of the listed folder, where each subfolder subtree is resolved with a single paginated `ListObjectsV2` request and cached independently. A write in the storage only invalidates the subtrees of its ancestor folders, sibling subtrees stay cached, and excluded folders (including the processing folder) are skipped without fetching their keys from S3. The scan response also primes the per-folder listing caches and the folder stat cache, and finds folders that have no marker object

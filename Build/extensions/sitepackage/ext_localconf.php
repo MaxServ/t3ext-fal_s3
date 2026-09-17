@@ -1,9 +1,11 @@
 <?php
 
-use TYPO3\CMS\Core\Information\Typo3Version;
-use TYPO3\CMS\Core\Resource\AbstractFile;
+declare(strict_types=1);
 
-defined('TYPO3') or die();
+use TYPO3\CMS\Core\Information\Typo3Version;
+use TYPO3\CMS\Core\Resource\FileType;
+
+defined('TYPO3') || die();
 
 $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations']['contentStorage'] = [
     'endpoint' => 'http://minio:10101',
@@ -13,27 +15,27 @@ $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['fal_s3']['storageConfigurations']['conte
     'key' => 'ddevminio',
     'secret' => 'ddevminio',
     'title' => 'TYPO3 Content Storage',
-    'publicBaseUrl' => 'https://fals3.ddev.site:10101/typo3-12/',
+    'publicBaseUrl' => 'https://fals3.ddev.site:10101/typo3-' . (new Typo3Version())->getMajorVersion() . '/',
     'defaultFolder' => 'user_upload',
     'basePath' => '',
     'cacheControl' => [
-        'file:' . (string)AbstractFile::FILETYPE_TEXT => [
+        'file:' . FileType::TEXT->value => [
             'max-age' => 3600,
             'private' => true
         ],
-        'file:' . AbstractFile::FILETYPE_IMAGE => [
+        'file:' . FileType::IMAGE->value => [
             'max-age' => 86400
         ],
-        'processed-file:' . AbstractFile::FILETYPE_IMAGE => [
+        'processed-file:' . FileType::IMAGE->value => [
             'max-age' => 604800
         ],
-        'file:' . AbstractFile::FILETYPE_AUDIO => [
+        'file:' . FileType::AUDIO->value => [
             'max-age' => 86400
         ],
-        'file:' . AbstractFile::FILETYPE_VIDEO => [
+        'file:' . FileType::VIDEO->value => [
             'max-age' => 86400
         ],
-        'file:' . AbstractFile::FILETYPE_APPLICATION => [
+        'file:' . FileType::APPLICATION->value => [
             'no-store' => true
         ]
     ]

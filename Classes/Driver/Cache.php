@@ -4,33 +4,12 @@ declare(strict_types=1);
 
 namespace MaxServ\FalS3\Driver;
 
-/*
- * This file is part of the TYPO3 CMS project.
- *
- * It is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License, either version 2
- * of the License, or any later version.
- *
- * For the full copyright and license information, please read the
- * LICENSE.txt file that was distributed with this source code.
- *
- * The TYPO3 project - inspiring people to share!
- */
-
 use Aws\LruArrayCache;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException;
-use TYPO3\CMS\Core\Cache\Frontend\VariableFrontend;
+use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-/**
- * Class Cache
- *
- * The runtime LRU cache is used as first line of defense,
- * to prevent excessive S3 API calls a simple file is stored
- * locally, using some kind of memory based backend could
- * improve performance even more.
- */
 class Cache extends LruArrayCache
 {
     /**
@@ -54,10 +33,7 @@ class Cache extends LruArrayCache
     public const TAG_FOLDER_CONTENTS = 'folder-contents';
     public const TAG_FOLDER_SUBTREE = 'folder-subtree';
 
-    /**
-     * @var VariableFrontend
-     */
-    protected static $cacheFrontend;
+    protected static ?FrontendInterface $cacheFrontend = null;
 
     /**
      * Get a cache item by key.
@@ -126,22 +102,15 @@ class Cache extends LruArrayCache
         $cacheFrontend->remove($entryIdentifier);
     }
 
-    /**
-     * @param string $key
-     * @param string $prefix
-     *
-     * @return string
-     */
     public static function buildEntryIdentifier(string $key, string $prefix = self::PREFIX_STAT): string
     {
         return $prefix . '-' . md5($key);
     }
 
     /**
-     * @return VariableFrontend
      * @throws NoSuchCacheException
      */
-    public static function getCacheFrontend(): VariableFrontend
+    public static function getCacheFrontend(): FrontendInterface
     {
         if (empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['tx_fal_s3'])) {
             throw new NoSuchCacheException('Missing cache configuration for tx_fal_s3 extension', 1655459397);

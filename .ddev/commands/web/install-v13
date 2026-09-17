@@ -9,14 +9,14 @@ composer config extra.typo3/cms.web-dir public -d /var/www/html/$VERSION
 composer config repositories.$EXTENSION_KEY path ../../$EXTENSION_KEY -d /var/www/html/$VERSION
 composer config --no-plugins allow-plugins.typo3/cms-composer-installers true -d /var/www/html/$VERSION
 composer config --no-plugins allow-plugins.typo3/class-alias-loader true -d /var/www/html/$VERSION
-composer req t3/cms:'^13' $PACKAGE_NAME:'*@dev' --no-progress -n -d /var/www/html/$VERSION
+composer req typo3/minimal:^$VERSION typo3/cms-filelist:^$VERSION typo3/cms-cli:^3.1 helhum/typo3-console:^9.0 $PACKAGE_NAME:'*@dev' --no-progress -n -d /var/www/html/$VERSION
 
 composer config repositories.sitepackage path ../../$EXTENSION_KEY/Build/extensions/sitepackage -d /var/www/html/$VERSION
 composer req maxserv/sitepackage:^1.0 -n -d /var/www/html/$VERSION
 
 cd /var/www/html/$VERSION
 
-mysql -h db -u root -p"root" -e "CREATE DATABASE ${VERSION};"
+mysql -h db -u root -p"root" -e "CREATE DATABASE IF NOT EXISTS ${VERSION};"
 
 vendor/bin/typo3 setup -n --dbname=$VERSION --password=$TYPO3_DB_PASSWORD --create-site="https://${VERSION}.fals3.ddev.site" --admin-user-password=$TYPO3_SETUP_ADMIN_PASSWORD
 

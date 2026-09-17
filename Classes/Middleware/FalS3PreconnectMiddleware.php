@@ -15,7 +15,8 @@ class FalS3PreconnectMiddleware implements MiddlewareInterface
 {
     public function __construct(
         protected StorageRepository $storageRepository
-    ) {}
+    ) {
+    }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
@@ -31,6 +32,9 @@ class FalS3PreconnectMiddleware implements MiddlewareInterface
         return $response;
     }
 
+    /**
+     * @return array<string>
+     */
     protected function getPreconnectHeaders(): array
     {
         $linkHeaders = [];

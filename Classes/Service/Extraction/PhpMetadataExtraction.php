@@ -18,7 +18,7 @@ class PhpMetadataExtraction extends \Causal\Extractor\Service\Extraction\PhpMeta
      * If the driver did not register a name, it's the class name.
      * empty array indicates no restrictions.
      *
-     * @return array
+     * @return array<int, string>
      */
     public function getDriverRestrictions(): array
     {
