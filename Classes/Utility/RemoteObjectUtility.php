@@ -27,16 +27,26 @@ class RemoteObjectUtility
         } elseif ($storage->getDriverType() === AmazonS3Driver::DRIVER_KEY) {
             $driverConfiguration = self::resolveDriverConfigurationForStorage($storage);
 
-            $client = new S3Client(
-                [
-                    'version' => '2006-03-01',
-                    'region' => $driverConfiguration['region'],
-                    'credentials' => [
-                        'key' => $driverConfiguration['key'],
-                        'secret' => $driverConfiguration['secret']
-                    ]
+            $clientConfiguration = [
+                'version' => '2006-03-01',
+                'region' => $driverConfiguration['region'],
+                'credentials' => [
+                    'key' => $driverConfiguration['key'],
+                    'secret' => $driverConfiguration['secret']
                 ]
-            );
+            ];
+
+            // apply the same custom endpoint settings as the driver, otherwise
+            // requests for S3-compatible storages are sent to AWS
+            if (!empty($driverConfiguration['endpoint'] ?? '')) {
+                $clientConfiguration['endpoint'] = $driverConfiguration['endpoint'];
+            }
+
+            if (is_bool($driverConfiguration['use_path_style_endpoint'] ?? '')) {
+                $clientConfiguration['use_path_style_endpoint'] = $driverConfiguration['use_path_style_endpoint'];
+            }
+
+            $client = new S3Client($clientConfiguration);
 
             self::$clients[$storageIdentifier] = $client;
         }
