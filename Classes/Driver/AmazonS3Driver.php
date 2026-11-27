@@ -27,7 +27,6 @@ use TYPO3\CMS\Core\Resource\StorageRepository;
 use TYPO3\CMS\Core\Type\File\FileInfo;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\PathUtility;
 
 class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements StreamableDriverInterface
 {
@@ -283,7 +282,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         $newName = $this->sanitizeFileName($newName);
         $newName = trim($newName, '/') . '/';
 
-        $parentFolderName = dirname($folderIdentifier);
+        $parentFolderName = $this->getParentIdentifier($folderIdentifier);
 
         if ($parentFolderName === '.') {
             $parentFolderName = '';
@@ -321,7 +320,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         }
 
         $this->flushCacheEntriesForFolder($folderIdentifier);
-        $this->flushCacheEntriesForFolder(dirname($folderIdentifier));
+        $this->flushCacheEntriesForFolder($this->getParentIdentifier($folderIdentifier));
         unset($this->folderExistsCache[rtrim($folderIdentifier, '/')]);
 
         return unlink($path);
@@ -520,7 +519,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         $newName = $this->sanitizeFileName($newName);
         $newName = trim($newName, '/');
 
-        $parentFolderName = dirname($fileIdentifier);
+        $parentFolderName = $this->getParentIdentifier($fileIdentifier);
 
         if ($parentFolderName === '.') {
             $parentFolderName = '';
@@ -561,7 +560,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
         $filePath = $this->getStreamWrapperPath($fileIdentifier);
 
-        $this->flushCacheEntriesForFolder(dirname($fileIdentifier));
+        $this->flushCacheEntriesForFolder($this->getParentIdentifier($fileIdentifier));
         unset($this->fileExistsCache[rtrim($filePath, '/')]);
 
         $this->temporaryFiles[$fileIdentifier] = $localFilePath;
@@ -582,7 +581,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
         $path = $this->getStreamWrapperPath($fileIdentifier);
 
-        $this->flushCacheEntriesForFolder(dirname($fileIdentifier));
+        $this->flushCacheEntriesForFolder($this->getParentIdentifier($fileIdentifier));
         unset($this->fileExistsCache[rtrim($path, '/')]);
 
         return unlink($path);
@@ -649,7 +648,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         $sourcePath = $this->getStreamWrapperPath($fileIdentifier);
         $targetPath = $this->getStreamWrapperPath($targetFileIdentifier);
 
-        $this->flushCacheEntriesForFolder(dirname($fileIdentifier));
+        $this->flushCacheEntriesForFolder($this->getParentIdentifier($fileIdentifier));
         $this->flushCacheEntriesForFolder($targetFolderIdentifier);
 
         rename($sourcePath, $targetPath);
@@ -714,8 +713,8 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
         $renamedEntries[$sourceFolderIdentifier] = $targetFolderIdentifier;
 
         $this->flushCacheEntriesForFolder($sourceFolderIdentifier);
-        $this->flushCacheEntriesForFolder(dirname($sourceFolderIdentifier));
-        $this->flushCacheEntriesForFolder(dirname($targetFolderIdentifier));
+        $this->flushCacheEntriesForFolder($this->getParentIdentifier($sourceFolderIdentifier));
+        $this->flushCacheEntriesForFolder($this->getParentIdentifier($targetFolderIdentifier));
         unset($this->folderExistsCache[rtrim($oldPath, '/')], $this->folderExistsCache[rtrim($newPath, '/')]);
 
         return $renamedEntries;
@@ -781,7 +780,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
             unset($this->folderExistsCache[rtrim($sourcePath, '/')], $this->folderExistsCache[rtrim($targetPath, '/')]);
         }
 
-        $this->flushCacheEntriesForFolder(dirname($targetFolderIdentifier));
+        $this->flushCacheEntriesForFolder($this->getParentIdentifier($targetFolderIdentifier));
 
         return true;
     }
@@ -1069,7 +1068,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
             'identifier' => $fileIdentifier,
             'storage' => $this->storageUid,
             'identifier_hash' => $this->hashIdentifier($fileIdentifier),
-            'folder_hash' => $this->hashIdentifier(PathUtility::dirname($fileIdentifier)),
+            'folder_hash' => $this->hashIdentifier($this->getParentIdentifier($fileIdentifier)),
             default => throw new \InvalidArgumentException(
                 sprintf('The information "%s" is not available.', $property),
                 1597926187
@@ -1814,6 +1813,15 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
     }
 
     /**
+     * dirname() returns "\\" instead of "/" for top-level paths on Windows,
+     * which made flushCacheEntriesForFolder() loop endlessly.
+     */
+    protected function getParentIdentifier(string $identifier): string
+    {
+        return str_replace('\\', '/', dirname($identifier));
+    }
+
+    /**
      * @throws NoSuchCacheException
      */
     protected function flushCacheEntriesForFolder(string $folderIdentifier): void
@@ -1833,7 +1841,7 @@ class AmazonS3Driver extends AbstractHierarchicalFilesystemDriver implements Str
 
         $currentIdentifier = $folderIdentifier;
         while ($currentIdentifier !== '/') {
-            $parentIdentifier = dirname(rtrim($currentIdentifier, '/'));
+            $parentIdentifier = $this->getParentIdentifier(rtrim($currentIdentifier, '/'));
             $currentIdentifier = (in_array($parentIdentifier, ['/', '.', ''], true))
                 ? '/'
                 : $parentIdentifier . '/';
